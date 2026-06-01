@@ -1,18 +1,18 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-} from 'react-native';
 import { useRouter } from 'expo-router';
-import { WordCard } from '../components/quiz/WordCard';
+import { useEffect } from 'react';
+import {
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { TileGrid } from '../components/quiz/TileGrid';
+import { WordCard } from '../components/quiz/WordCard';
 import { Button } from '../components/ui/Button';
 import { ProgressBar } from '../components/ui/ProgressBar';
+import { Colors, Radius, Spacing, Typography } from '../constants/theme';
 import { useQuizSession } from '../hooks/useQuizSession';
-import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -162,8 +162,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    gap: Spacing.xl,
+    justifyContent: 'flex-start',
+    gap: Spacing.md,
   },
   wordSection: {
     gap: Spacing.sm,

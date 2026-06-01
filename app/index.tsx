@@ -1,16 +1,19 @@
 import { useRouter } from 'expo-router';
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { ModeCard } from '../components/home/ModeCard';
 import { Button } from '../components/ui/Button';
 import { Colors, Spacing, Typography } from '../constants/theme';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { QuizMode } from '../types';
+
+const logoImage = require('../assets/vocabio-logo.png');
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,7 +35,12 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>Vocabio</Text>
+          <View style={styles.logoContainer}>
+            <Image source={logoImage} style={styles.logoIcon} />
+            <Text style={styles.logoText}>
+              <Text style={styles.logoV}>V</Text>ocabio
+            </Text>
+          </View>
           <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
         </View>
 
@@ -77,11 +85,25 @@ const styles = StyleSheet.create({
   header: {
     gap: Spacing.sm,
   },
-  logo: {
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  logoIcon: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+  },
+  logoText: {
     fontSize: Typography.sizes.display,
     fontWeight: Typography.weights.extrabold,
     color: Colors.textPrimary,
     letterSpacing: -1,
+  },
+  logoV: {
+    color: Colors.success,
+    fontWeight: Typography.weights.extrabold,
   },
   tagline: {
     fontSize: Typography.sizes.md,
