@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withTiming,
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
-import { Colors, Typography, Radius, Shadow, Spacing } from '../../constants/theme';
+import { Colors, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
 import { TileState } from '../../types';
 
 interface AnswerTileProps {
@@ -106,11 +106,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   correct: {
-    backgroundColor: Colors.successLight,
+    backgroundColor: '#D1F0E3',
     borderColor: Colors.success,
   },
   wrong: {
-    backgroundColor: Colors.errorLight,
+    backgroundColor: '#FCC9BD',
     borderColor: Colors.error,
   },
   disabledTile: {

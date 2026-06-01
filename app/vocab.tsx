@@ -1,15 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-    FlatList,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Button } from '../components/ui/Button';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { getWordsByCategory } from '../data/vocabulary';
 import { GrammarCategory, VocabWord } from '../types';
@@ -27,7 +26,6 @@ const renderWord = ({ item }: { item: VocabWord }) => (
   <View style={styles.wordRow}>
     <View style={styles.wordCell}>
       <Text style={styles.wordFrench}>{item.french}</Text>
-      <Text style={styles.wordLevel}>{item.level}</Text>
     </View>
     <Text style={styles.wordSpanish}>{item.spanish}</Text>
   </View>
@@ -41,16 +39,25 @@ export default function VocabularyScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Vocabulaire</Text>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backBtn}>
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>
+            <Text style={styles.titleV}>V</Text>ocabulaire
+          </Text>
           <Text style={styles.subtitle}>Consultez les mots par catégorie.</Text>
         </View>
-        <Button label="Retour" variant="ghost" onPress={() => router.push('/')} />
       </View>
 
       <View style={styles.categoryBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+          style={styles.categoryScrollView}
+        >
           {CATEGORY_OPTIONS.map((option) => {
             const isActive = option.key === category;
             return (
@@ -69,6 +76,11 @@ export default function VocabularyScreen() {
       <View style={styles.listHeader}>
         <Text style={styles.listTitle}>{CATEGORY_OPTIONS.find((option) => option.key === category)?.label}</Text>
         <Text style={styles.listCount}>{words.length} mots</Text>
+      </View>
+
+      <View style={styles.flagsRow}>
+        <Text style={styles.flag}>🇫🇷</Text>
+        <Text style={styles.flag}>🇪🇸</Text>
       </View>
 
       <FlatList
@@ -96,10 +108,26 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     gap: Spacing.md,
   },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  headerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    marginLeft: Spacing.lg,
+  },
   title: {
     fontSize: Typography.sizes.xxl,
     fontWeight: Typography.weights.extrabold,
     color: Colors.textPrimary,
+  },
+  titleV: {
+    color: Colors.success,
+    fontWeight: Typography.weights.extrabold,
   },
   subtitle: {
     marginTop: Spacing.xs,
@@ -107,11 +135,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   categoryBar: {
-    paddingLeft: Spacing.lg,
     paddingBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  categoryScrollView: {
+    width: '100%',
   },
   categoryScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
     paddingRight: Spacing.lg,
   },
   categoryButton: {
@@ -134,6 +168,20 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: Colors.textOnPrimary,
   },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  backIcon: {
+    fontSize: Typography.sizes.lg,
+    color: Colors.textPrimary,
+  },
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,6 +198,17 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     color: Colors.textTertiary,
     fontWeight: Typography.weights.medium,
+  },
+  flagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  flag: {
+    fontSize: 30,
   },
   listContent: {
     paddingHorizontal: Spacing.lg,
@@ -175,11 +234,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.semibold,
     color: Colors.textPrimary,
-  },
-  wordLevel: {
-    marginTop: Spacing.xs,
-    fontSize: Typography.sizes.xs,
-    color: Colors.textTertiary,
   },
   wordSpanish: {
     fontSize: Typography.sizes.md,

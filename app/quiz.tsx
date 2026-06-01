@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { TileGrid } from '../components/quiz/TileGrid';
 import { WordCard } from '../components/quiz/WordCard';
@@ -142,12 +142,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   scoreText: {
-    fontSize: Typography.sizes.sm,
+    fontSize: Typography.sizes.lg,
     color: Colors.primary,
     fontWeight: Typography.weights.medium,
   },
   scoreValue: {
-    fontSize: Typography.sizes.sm,
+    fontSize: Typography.sizes.lg,
     color: Colors.primary,
     fontWeight: Typography.weights.bold,
   },
@@ -155,10 +155,10 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   progressLabel: {
-    fontSize: Typography.sizes.xs,
+    fontSize: Typography.sizes.md,
     color: Colors.textTertiary,
     textAlign: 'right',
-    fontWeight: Typography.weights.medium,
+    fontWeight: Typography.weights.bold,
   },
   content: {
     flex: 1,
