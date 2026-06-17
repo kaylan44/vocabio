@@ -21,6 +21,8 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0);
 
   // ─── Feedback animation on state change ────────────────────────────────────
   useEffect(() => {
@@ -30,6 +32,11 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
         withSpring(1.04, { damping: 8 }),
         withSpring(1, { damping: 12 })
       );
+      // Pulse halo
+      pulseScale.value = 1;
+      pulseOpacity.value = 0.6;
+      pulseScale.value = withTiming(1.6, { duration: 500 });
+      pulseOpacity.value = withTiming(0, { duration: 500 });
     } else if (state === 'selected-wrong') {
       // Shake effect (horizontal)
       scale.value = withSequence(
@@ -44,6 +51,11 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
+  }));
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    opacity: pulseOpacity.value,
   }));
 
   const handlePressIn = () => {
@@ -78,6 +90,7 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
       activeOpacity={1}
       style={[animatedStyle, { flex: 1 }]}
     >
+      <Animated.View style={[styles.pulse, pulseStyle]} pointerEvents="none" />
       <View style={containerStyle}>
         {/* Correct indicator dot */}
         {(state === 'selected-correct' || state === 'revealed-correct') && (
@@ -116,6 +129,16 @@ const styles = StyleSheet.create({
   disabledTile: {
     backgroundColor: Colors.background,
     borderColor: Colors.borderLight,
+  },
+  pulse: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.success,
+    zIndex: -1,
   },
   indicatorDot: {
     position: 'absolute',
