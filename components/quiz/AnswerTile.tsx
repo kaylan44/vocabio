@@ -23,6 +23,9 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
   const opacity = useSharedValue(1);
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0);
+  const translateX = useSharedValue(0);
+  const errorPulseScale = useSharedValue(1);
+  const errorPulseOpacity = useSharedValue(0);
 
   // ─── Feedback animation on state change ────────────────────────────────────
   useEffect(() => {
@@ -39,23 +42,37 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
       pulseOpacity.value = withTiming(0, { duration: 500 });
     } else if (state === 'selected-wrong') {
       // Shake effect (horizontal)
-      scale.value = withSequence(
-        withSpring(0.97, { damping: 8 }),
-        withSpring(1, { damping: 10 })
+      translateX.value = withSequence(
+        withTiming(-6, { duration: 60 }),
+        withTiming(6, { duration: 60 }),
+        withTiming(-5, { duration: 60 }),
+        withTiming(5, { duration: 60 }),
+        withTiming(-3, { duration: 60 }),
+        withTiming(0, { duration: 60 })
       );
+      // Red pulse halo
+      errorPulseScale.value = 1;
+      errorPulseOpacity.value = 0.5;
+      errorPulseScale.value = withTiming(1.6, { duration: 450 });
+      errorPulseOpacity.value = withTiming(0, { duration: 450 });
     } else if (state === 'disabled') {
       opacity.value = withTiming(0.5, { duration: 200 });
     }
   }, [state]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value }, { translateX: translateX.value }],
     opacity: opacity.value,
   }));
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
     opacity: pulseOpacity.value,
+  }));
+
+  const errorPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: errorPulseScale.value }],
+    opacity: errorPulseOpacity.value,
   }));
 
   const handlePressIn = () => {
@@ -91,6 +108,7 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
       style={[animatedStyle, { flex: 1 }]}
     >
       <Animated.View style={[styles.pulse, pulseStyle]} pointerEvents="none" />
+      <Animated.View style={[styles.errorPulse, errorPulseStyle]} pointerEvents="none" />
       <View style={containerStyle}>
         {/* Correct indicator dot */}
         {(state === 'selected-correct' || state === 'revealed-correct') && (
@@ -138,6 +156,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: Radius.lg,
     backgroundColor: Colors.success,
+    zIndex: -1,
+  },
+  errorPulse: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.error,
     zIndex: -1,
   },
   indicatorDot: {
