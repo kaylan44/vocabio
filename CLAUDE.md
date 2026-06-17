@@ -38,6 +38,12 @@ Ordre de modification recommandé pour rester cohérent avec le flux de données
 4. `components/*` pour l'UI
 5. `app/*.tsx` pour l'intégration finale dans l'écran
 
+## Workflow Git — règles absolues
+
+- Ne jamais push directement sur `main`. Toujours créer une branche (ex. `feat/...`, `fix/...`, `docs/...`), commiter dessus, puis ouvrir une PR.
+- Ne jamais utiliser `git push --force` sans confirmation explicite de l'utilisateur.
+- Avant de créer une PR, vérifier que la branche courante n'est pas `main` avec `git branch --show-current`.
+
 ## Ce qu'il ne faut jamais faire sans demander confirmation
 
 - Changer la structure de persistance AsyncStorage (clé `@vocabio_progress_v1`) — cela invaliderait la progression existante des utilisateurs.
