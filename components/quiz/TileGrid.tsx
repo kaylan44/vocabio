@@ -56,9 +56,11 @@ export const TileGrid: React.FC<TileGridProps> = ({
 const styles = StyleSheet.create({
   grid: {
     gap: Spacing.sm,
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    alignItems: 'stretch',
   },
 });
