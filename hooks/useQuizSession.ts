@@ -21,7 +21,7 @@ export function useQuizSession() {
     resetSession,
   } = useQuizStore();
 
-  const { getModeProgressMap, recordAnswer } = useProgressStore();
+  const { getModeProgressMap, recordAnswer, getWordModeProgress } = useProgressStore();
 
   // ─── Start a new session ─────────────────────────────────────────────────────
   const start = useCallback((mode: QuizMode) => {
@@ -81,5 +81,6 @@ export function useQuizSession() {
     nextQuestion,
     replay,
     goHome,
+    getWordModeProgress,
   };
 }

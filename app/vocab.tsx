@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { getWordsByCategory } from '../data/vocabulary';
-import { GrammarCategory, VocabWord } from '../types';
+import { useQuizSession } from '../hooks/useQuizSession';
+import { GrammarCategory, QuizMode, VocabWord, WordModeProgress } from '../types';
 
 const CATEGORY_OPTIONS: { key: GrammarCategory; label: string }[] = [
   { key: 'noun', label: 'Noms' },
@@ -22,20 +23,50 @@ const CATEGORY_OPTIONS: { key: GrammarCategory; label: string }[] = [
   { key: 'pronoun', label: 'Pronoms' },
 ];
 
-const renderWord = ({ item }: { item: VocabWord }) => (
-  <View style={styles.wordRow}>
-    <View style={styles.wordCell}>
-      <Text style={styles.wordFrench}>{item.french}</Text>
-    </View>
-    <Text style={styles.wordSpanish}>{item.spanish}</Text>
-  </View>
-);
+const MODE_OPTIONS: { key: QuizMode; label: string }[] = [
+  { key: 'fr-es', label: 'FR → ES' },
+  { key: 'es-fr', label: 'ES → FR' },
+];
+
+function getBadgeColor(p: WordModeProgress): string {
+  if (p.totalSeen === 0) return Colors.textTertiary;
+  const ratio = p.totalCorrect / p.totalSeen;
+  if (ratio >= 2 / 3) return Colors.success;
+  if (ratio >= 1 / 3) return Colors.textSecondary;
+  return Colors.error;
+}
 
 export default function VocabularyScreen() {
   const router = useRouter();
   const [category, setCategory] = useState<GrammarCategory>('noun');
+  const [quizMode, setQuizMode] = useState<QuizMode>('fr-es');
+  const { getWordModeProgress } = useQuizSession();
 
   const words = useMemo(() => getWordsByCategory(category), [category]);
+
+  const renderWord = useCallback(({ item }: { item: VocabWord }) => {
+    const progress = getWordModeProgress(item.id, quizMode);
+    const showCounter = progress && progress.totalSeen > 0;
+    const isMastered = progress && progress.totalCorrect >= 5;
+    return (
+      <View style={styles.wordRow}>
+        <View style={styles.wordCellLeft}>
+          <Text style={styles.wordFrench}>{item.french}</Text>
+        </View>
+        <View style={styles.counterCell}>
+          {showCounter && (
+            <Text style={[styles.counterText, { color: getBadgeColor(progress) }]}>
+              {progress.totalCorrect}/{progress.totalSeen}
+            </Text>
+          )}
+          {isMastered && <Text style={styles.medalIcon}>🏅</Text>}
+        </View>
+        <View style={styles.wordCellRight}>
+          <Text style={styles.wordSpanish}>{item.spanish}</Text>
+        </View>
+      </View>
+    );
+  }, [getWordModeProgress, quizMode]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -78,9 +109,24 @@ export default function VocabularyScreen() {
         <Text style={styles.listCount}>{words.length} mots</Text>
       </View>
 
-      <View style={styles.flagsRow}>
-        <Text style={styles.flag}>🇫🇷</Text>
-        <Text style={styles.flag}>🇪🇸</Text>
+      <View style={styles.modeBar}>
+        <Text style={styles.modeLabel}>Scores :</Text>
+        <View style={styles.modeToggle}>
+          {MODE_OPTIONS.map((opt) => {
+            const isActive = opt.key === quizMode;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                onPress={() => setQuizMode(opt.key)}
+                style={[styles.modeButton, isActive && styles.modeButtonActive]}
+              >
+                <Text style={[styles.modeButtonText, isActive && styles.modeButtonTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <FlatList
@@ -199,16 +245,42 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     fontWeight: Typography.weights.medium,
   },
-  flagsRow: {
+  modeBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
+    gap: Spacing.sm,
   },
-  flag: {
-    fontSize: 30,
+  modeLabel: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.textTertiary,
+    fontWeight: Typography.weights.medium,
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  modeButton: {
+    paddingVertical: 5,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  modeButtonActive: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primary,
+  },
+  modeButtonText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: Typography.weights.medium,
+  },
+  modeButtonTextActive: {
+    color: Colors.primary,
+    fontWeight: Typography.weights.semibold,
   },
   listContent: {
     paddingHorizontal: Spacing.lg,
@@ -226,9 +298,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
-  wordCell: {
+  wordCellLeft: {
     flex: 1,
-    paddingRight: Spacing.sm,
+  },
+  counterCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    width: 72,
+  },
+  counterText: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+  },
+  wordCellRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  medalIcon: {
+    fontSize: 15,
   },
   wordFrench: {
     fontSize: Typography.sizes.md,
@@ -240,6 +329,5 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.medium,
     color: Colors.primary,
     textAlign: 'right',
-    minWidth: 100,
   },
 });
