@@ -93,7 +93,7 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
 
 const styles = StyleSheet.create({
   tile: {
-    flex: 1,
+    width: '100%',
     minHeight: 72,
     backgroundColor: Colors.tileIdle,
     borderRadius: Radius.lg,
