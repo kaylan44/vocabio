@@ -40,9 +40,10 @@ Ordre de modification recommandé pour rester cohérent avec le flux de données
 
 ## Workflow Git — règles absolues
 
-- Ne jamais push directement sur `main`. Toujours créer une branche (ex. `feat/...`, `fix/...`, `docs/...`), commiter dessus, puis ouvrir une PR.
+- Ne jamais push directement sur `main`. Toujours créer une branche (ex. `feat/...`, `fix/...`, `docs/...`) et commiter dessus.
 - Ne jamais utiliser `git push --force` sans confirmation explicite de l'utilisateur.
 - Avant de créer une PR, vérifier que la branche courante n'est pas `main` avec `git branch --show-current`.
+- Ne jamais faire `git push` ni créer de PR sans que l'utilisateur le demande explicitement. Tout le travail reste en local jusqu'à instruction contraire.
 
 ## Ce qu'il ne faut jamais faire sans demander confirmation
 
