@@ -45,6 +45,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
               label={option}
               state={getTileState(option)}
               onPress={() => onSelect(option)}
+              hint={option === selectedAnswer && option !== correctAnswer ? correctAnswer : undefined}
             />
           ))}
         </View>
