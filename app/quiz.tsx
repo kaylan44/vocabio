@@ -85,6 +85,7 @@ export default function QuizScreen() {
             correctAnswer={currentQuestion.correctAnswer}
             hasAnswered={hasAnswered}
             onSelect={selectAnswer}
+            mode={session.mode}
           />
 
         </View>
