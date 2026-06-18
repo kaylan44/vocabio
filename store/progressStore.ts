@@ -136,7 +136,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-function computeMastery(streak: number, totalSeen: number): WordModeProgress['mastery'] {
+export function computeMastery(streak: number, totalSeen: number): WordModeProgress['mastery'] {
   if (streak >= QUIZ_CONFIG.masteryThreshold) return 'mastered';
   if (totalSeen > 0) return 'seen';
   return 'new';
