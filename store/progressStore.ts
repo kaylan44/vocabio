@@ -3,6 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserProgress, WordModeProgress, QuizMode } from '../types';
 import { QUIZ_CONFIG } from '../constants/theme';
 
+export interface WordCombinedProgress {
+  totalSeen: number;
+  totalCorrect: number;
+  isMastered: boolean;
+}
+
 const STORAGE_KEY = '@vocabio_progress_v1';
 
 // ─── Store definition ─────────────────────────────────────────────────────────
@@ -16,6 +22,7 @@ interface ProgressState {
   recordAnswer: (wordId: string, mode: QuizMode, correct: boolean) => void;
   getWordModeProgress: (wordId: string, mode: QuizMode) => WordModeProgress | undefined;
   getModeProgressMap: (mode: QuizMode) => Record<string, WordModeProgress | undefined>;
+  getWordCombinedProgress: (wordId: string) => WordCombinedProgress;
   resetProgress: () => void;
 }
 
@@ -109,6 +116,16 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       map[wordId] = wp[modeKey];
     }
     return map;
+  },
+
+  getWordCombinedProgress: (wordId) => {
+    const { progress } = get();
+    const wp = progress.words[wordId];
+    if (!wp) return { totalSeen: 0, totalCorrect: 0, isMastered: false };
+    const totalSeen = wp.frEs.totalSeen + wp.esF.totalSeen;
+    const totalCorrect = wp.frEs.totalCorrect + wp.esF.totalCorrect;
+    const isMastered = wp.frEs.mastery === 'mastered' && wp.esF.mastery === 'mastered';
+    return { totalSeen, totalCorrect, isMastered };
   },
 
   resetProgress: () => {

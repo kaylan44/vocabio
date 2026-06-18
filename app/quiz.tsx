@@ -74,6 +74,7 @@ export default function QuizScreen() {
               word={currentQuestion.targetWord}
               category={currentQuestion.category}
               language={questionLanguage}
+              level={currentQuestion.level}
             />
           </View>
 
