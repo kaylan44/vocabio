@@ -1,9 +1,8 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
-  FlatList,
+  SectionList,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,7 +11,8 @@ import {
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { getWordsByCategory } from '../data/vocabulary';
 import { useQuizSession } from '../hooks/useQuizSession';
-import { GrammarCategory, QuizMode, VocabWord, WordModeProgress } from '../types';
+import { GrammarCategory, VocabWord, WordLevel } from '../types';
+import { useState } from 'react';
 
 const CATEGORY_OPTIONS: { key: GrammarCategory; label: string }[] = [
   { key: 'noun', label: 'Noms' },
@@ -23,14 +23,11 @@ const CATEGORY_OPTIONS: { key: GrammarCategory; label: string }[] = [
   { key: 'pronoun', label: 'Pronoms' },
 ];
 
-const MODE_OPTIONS: { key: QuizMode; label: string }[] = [
-  { key: 'fr-es', label: 'FR → ES' },
-  { key: 'es-fr', label: 'ES → FR' },
-];
+const LEVEL_ORDER: WordLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-function getBadgeColor(p: WordModeProgress): string {
-  if (p.totalSeen === 0) return Colors.textTertiary;
-  const ratio = p.totalCorrect / p.totalSeen;
+function getCombinedBadgeColor(totalCorrect: number, totalSeen: number): string {
+  if (totalSeen === 0) return Colors.textTertiary;
+  const ratio = totalCorrect / totalSeen;
   if (ratio >= 2 / 3) return Colors.success;
   if (ratio >= 1 / 3) return Colors.textSecondary;
   return Colors.error;
@@ -39,15 +36,30 @@ function getBadgeColor(p: WordModeProgress): string {
 export default function VocabularyScreen() {
   const router = useRouter();
   const [category, setCategory] = useState<GrammarCategory>('noun');
-  const [quizMode, setQuizMode] = useState<QuizMode>('fr-es');
-  const { getWordModeProgress } = useQuizSession();
+  const { getWordCombinedProgress } = useQuizSession();
 
-  const words = useMemo(() => getWordsByCategory(category), [category]);
+  const sections = useMemo(() => {
+    const words = getWordsByCategory(category);
+    const grouped: Record<string, VocabWord[]> = {};
+    for (const level of LEVEL_ORDER) {
+      grouped[level] = [];
+    }
+    for (const word of words) {
+      if (grouped[word.level]) {
+        grouped[word.level].push(word);
+      }
+    }
+    return LEVEL_ORDER
+      .filter((level) => grouped[level].length > 0)
+      .map((level) => ({
+        title: level,
+        data: grouped[level].sort((a, b) => a.french.localeCompare(b.french)),
+      }));
+  }, [category]);
 
-  const renderWord = useCallback(({ item }: { item: VocabWord }) => {
-    const progress = getWordModeProgress(item.id, quizMode);
-    const showCounter = progress && progress.totalSeen > 0;
-    const isMastered = progress && progress.totalCorrect >= 5;
+  const renderItem = useCallback(({ item }: { item: VocabWord }) => {
+    const combined = getWordCombinedProgress(item.id);
+    const showCounter = combined.totalSeen > 0;
     return (
       <View style={styles.wordRow}>
         <View style={styles.wordCellLeft}>
@@ -55,18 +67,26 @@ export default function VocabularyScreen() {
         </View>
         <View style={styles.counterCell}>
           {showCounter && (
-            <Text style={[styles.counterText, { color: getBadgeColor(progress) }]}>
-              {progress.totalCorrect}/{progress.totalSeen}
+            <Text style={[styles.counterText, { color: getCombinedBadgeColor(combined.totalCorrect, combined.totalSeen) }]}>
+              {combined.totalCorrect}/{combined.totalSeen}
             </Text>
           )}
-          {isMastered && <Text style={styles.medalIcon}>🏅</Text>}
+          {combined.isMastered && <Text style={styles.medalIcon}>🏅</Text>}
         </View>
         <View style={styles.wordCellRight}>
           <Text style={styles.wordSpanish}>{item.spanish}</Text>
         </View>
       </View>
     );
-  }, [getWordModeProgress, quizMode]);
+  }, [getWordCombinedProgress]);
+
+  const renderSectionHeader = useCallback(({ section }: { section: { title: string } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+    </View>
+  ), []);
+
+  const totalWords = sections.reduce((sum, s) => sum + s.data.length, 0);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -82,59 +102,39 @@ export default function VocabularyScreen() {
         </View>
       </View>
 
-      <View style={styles.categoryBar}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-          style={styles.categoryScrollView}
-        >
-          {CATEGORY_OPTIONS.map((option) => {
-            const isActive = option.key === category;
-            return (
-              <TouchableOpacity
-                key={option.key}
-                onPress={() => setCategory(option.key)}
-                style={[styles.categoryButton, isActive && styles.categoryButtonActive]}
-              >
-                <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>{option.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+      {/* Category grid 2×3 */}
+      <View style={styles.categoryGrid}>
+        {CATEGORY_OPTIONS.map((option) => {
+          const isActive = option.key === category;
+          return (
+            <TouchableOpacity
+              key={option.key}
+              onPress={() => setCategory(option.key)}
+              style={[styles.categoryButton, isActive && styles.categoryButtonActive]}
+            >
+              <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={styles.listHeader}>
-        <Text style={styles.listTitle}>{CATEGORY_OPTIONS.find((option) => option.key === category)?.label}</Text>
-        <Text style={styles.listCount}>{words.length} mots</Text>
+        <Text style={styles.listTitle}>
+          {CATEGORY_OPTIONS.find((o) => o.key === category)?.label}
+        </Text>
+        <Text style={styles.listCount}>{totalWords} mots</Text>
       </View>
 
-      <View style={styles.modeBar}>
-        <Text style={styles.modeLabel}>Scores :</Text>
-        <View style={styles.modeToggle}>
-          {MODE_OPTIONS.map((opt) => {
-            const isActive = opt.key === quizMode;
-            return (
-              <TouchableOpacity
-                key={opt.key}
-                onPress={() => setQuizMode(opt.key)}
-                style={[styles.modeButton, isActive && styles.modeButtonActive]}
-              >
-                <Text style={[styles.modeButtonText, isActive && styles.modeButtonTextActive]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      <FlatList
-        data={words}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={renderWord}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
       />
     </SafeAreaView>
   );
@@ -144,15 +144,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
-    gap: Spacing.md,
   },
   topBar: {
     flexDirection: 'row',
@@ -180,40 +171,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.md,
     color: Colors.textSecondary,
   },
-  categoryBar: {
-    paddingBottom: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  categoryScrollView: {
-    width: '100%',
-  },
-  categoryScroll: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingRight: Spacing.lg,
-  },
-  categoryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  categoryButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  categoryText: {
-    color: Colors.textPrimary,
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-  },
-  categoryTextActive: {
-    color: Colors.textOnPrimary,
-  },
   backBtn: {
     width: 40,
     height: 40,
@@ -227,6 +184,34 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: Typography.sizes.lg,
     color: Colors.textPrimary,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  categoryButton: {
+    width: '30.5%',
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    alignItems: 'center',
+  },
+  categoryButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  categoryText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.medium,
+  },
+  categoryTextActive: {
+    color: Colors.textOnPrimary,
   },
   listHeader: {
     flexDirection: 'row',
@@ -245,42 +230,21 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     fontWeight: Typography.weights.medium,
   },
-  modeBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  modeLabel: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textTertiary,
-    fontWeight: Typography.weights.medium,
-  },
-  modeToggle: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-  },
-  modeButton: {
-    paddingVertical: 5,
+  sectionHeader: {
+    paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.borderLight,
+    borderRadius: Radius.sm,
+    alignSelf: 'flex-start',
   },
-  modeButtonActive: {
-    backgroundColor: Colors.primaryLight,
-    borderColor: Colors.primary,
-  },
-  modeButtonText: {
+  sectionTitle: {
     fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
     color: Colors.textSecondary,
-    fontWeight: Typography.weights.medium,
-  },
-  modeButtonTextActive: {
-    color: Colors.primary,
-    fontWeight: Typography.weights.semibold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   listContent: {
     paddingHorizontal: Spacing.lg,

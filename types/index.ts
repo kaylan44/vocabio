@@ -23,6 +23,7 @@ export interface QuizQuestion {
   correctAnswer: string;   // The correct translation
   options: string[];       // 4 shuffled options
   category: GrammarCategory;
+  level: WordLevel;
 }
 
 export type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-correct' | 'disabled';

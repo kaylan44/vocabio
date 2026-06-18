@@ -74,6 +74,7 @@ export default function QuizScreen() {
               word={currentQuestion.targetWord}
               category={currentQuestion.category}
               language={questionLanguage}
+              level={currentQuestion.level}
             />
           </View>
 
@@ -84,6 +85,7 @@ export default function QuizScreen() {
             correctAnswer={currentQuestion.correctAnswer}
             hasAnswered={hasAnswered}
             onSelect={selectAnswer}
+            mode={session.mode}
           />
 
         </View>

@@ -86,6 +86,7 @@ function buildQuestion(word: VocabWord, mode: QuizMode): QuizQuestion {
     correctAnswer,
     options,
     category: word.category,
+    level: word.level,
   };
 }
 

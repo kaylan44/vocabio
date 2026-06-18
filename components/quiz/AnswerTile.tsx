@@ -14,11 +14,12 @@ interface AnswerTileProps {
   label: string;
   state: TileState;
   onPress: () => void;
+  hint?: string;
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress }) => {
+export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress, hint }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
   const pulseScale = useSharedValue(1);
@@ -117,6 +118,9 @@ export const AnswerTile: React.FC<AnswerTileProps> = ({ label, state, onPress })
         <Text style={textStyle} numberOfLines={2} adjustsFontSizeToFit>
           {label}
         </Text>
+        {state === 'selected-wrong' && hint && (
+          <Text style={styles.hintText}>({hint})</Text>
+        )}
       </View>
     </AnimatedTouchable>
   );
@@ -188,5 +192,12 @@ const styles = StyleSheet.create({
   },
   labelWrong: {
     color: Colors.error,
+  },
+  hintText: {
+    marginTop: 4,
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.medium,
+    color: Colors.error,
+    textAlign: 'center',
   },
 });

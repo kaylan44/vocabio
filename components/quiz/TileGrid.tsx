@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { AnswerTile } from './AnswerTile';
-import { TileState } from '../../types';
+import { QuizMode, TileState } from '../../types';
 import { Spacing } from '../../constants/theme';
+import { VOCABULARY } from '../../data/vocabulary';
 
 interface TileGridProps {
   options: string[];
@@ -10,6 +11,16 @@ interface TileGridProps {
   correctAnswer: string;
   hasAnswered: boolean;
   onSelect: (answer: string) => void;
+  mode: QuizMode;
+}
+
+function getWrongAnswerHint(option: string, mode: QuizMode): string | undefined {
+  // option is a translation — find the word and return the reverse translation
+  const word = mode === 'fr-es'
+    ? VOCABULARY.find(w => w.spanish === option)
+    : VOCABULARY.find(w => w.french === option);
+  if (!word) return undefined;
+  return mode === 'fr-es' ? word.french : word.spanish;
 }
 
 export const TileGrid: React.FC<TileGridProps> = ({
@@ -18,6 +29,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
   correctAnswer,
   hasAnswered,
   onSelect,
+  mode,
 }) => {
   const getTileState = (option: string): TileState => {
     if (!hasAnswered) return 'idle';
@@ -45,6 +57,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
               label={option}
               state={getTileState(option)}
               onPress={() => onSelect(option)}
+              hint={option === selectedAnswer && option !== correctAnswer ? getWrongAnswerHint(option, mode) : undefined}
             />
           ))}
         </View>
