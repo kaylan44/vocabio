@@ -18,7 +18,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (status === 'unauthenticated' && !onLoginScreen) {
       router.replace('/login' as never);
-    } else if ((status === 'authenticated' || status === 'guest') && onLoginScreen) {
+    } else if (status === 'authenticated' && onLoginScreen) {
+      // Only redirect away from login if already authenticated with Google,
+      // not if guest — guests can visit login to sign in.
       router.replace('/');
     }
   }, [status, segments]);

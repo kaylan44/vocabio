@@ -1,12 +1,55 @@
 import { useState } from 'react';
-import { Image, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../components/ui/Button';
+import { useRouter } from 'expo-router';
+import {
+  ActivityIndicator,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { GoogleLogo } from '../components/ui/GoogleLogo';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
 
 const logoImage = require('../assets/vocabio-logo.png');
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+function AuthButton({
+  onPress,
+  disabled,
+  children,
+  style,
+}: {
+  onPress: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+  style?: object;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <AnimatedTouchable
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.9}
+      onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      style={[styles.authButton, style, animStyle]}
+    >
+      {children}
+    </AnimatedTouchable>
+  );
+}
+
+// Inline SVG Google logo as a URI for cross-platform compatibility
+
 export default function LoginScreen() {
+  const router = useRouter();
   const { signInWithGoogle, continueAsGuest } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,8 +58,6 @@ export default function LoginScreen() {
     setLoading(true);
     setError(null);
     const { error: err } = await signInWithGoogle();
-    // On web, this redirects the page so we never reach the lines below.
-    // On native (not yet supported), we'd land here with an error.
     if (err) setError(err);
     setLoading(false);
   };
@@ -35,28 +76,24 @@ export default function LoginScreen() {
 
         {/* Auth actions */}
         <View style={styles.actions}>
-          <View style={styles.googleButton}>
-            <Button
-              label="Continuer avec Google"
-              variant="secondary"
-              onPress={handleGoogleSignIn}
-              loading={loading}
-            />
-          </View>
+          {/* Google button */}
+          <AuthButton onPress={handleGoogleSignIn} disabled={loading} style={styles.googleButton}>
+            {loading ? (
+              <ActivityIndicator color={Colors.textPrimary} />
+            ) : (
+              <>
+                <GoogleLogo />
+                <Text style={styles.googleLabel}>Continuer avec Google</Text>
+              </>
+            )}
+          </AuthButton>
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Button
-            label="Essayer en tant qu'invité"
-            variant="ghost"
-            onPress={continueAsGuest}
-          />
+          {/* Guest button */}
+          <AuthButton onPress={async () => { await continueAsGuest(); router.replace('/'); }} style={styles.guestButton}>
+            <Text style={styles.guestLabel}>Essayer en tant qu'invité</Text>
+          </AuthButton>
         </View>
 
         <Text style={styles.hint}>
@@ -109,30 +146,42 @@ const styles = StyleSheet.create({
   actions: {
     gap: Spacing.md,
   },
+  authButton: {
+    height: 52,
+    borderRadius: Radius.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+  },
   googleButton: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     ...Shadow.card,
+  },
+
+  googleLabel: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textPrimary,
+    letterSpacing: 0.2,
+  },
+  guestButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  guestLabel: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textTertiary,
+    letterSpacing: 0.2,
   },
   error: {
     color: Colors.error,
     fontSize: Typography.sizes.sm,
     textAlign: 'center',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textTertiary,
-    fontWeight: Typography.weights.medium,
   },
   hint: {
     textAlign: 'center',
