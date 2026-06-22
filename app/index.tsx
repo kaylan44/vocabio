@@ -5,11 +5,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { ModeCard } from '../components/home/ModeCard';
 import { Button } from '../components/ui/Button';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Radius, Spacing, Typography } from '../constants/theme';
+import { useAuth } from '../hooks/useAuth';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { QuizMode } from '../types';
 
@@ -18,6 +20,7 @@ const logoImage = require('../assets/vocabio-logo.png');
 export default function HomeScreen() {
   const router = useRouter();
   const { start } = useQuizSession();
+  const { isAuthenticated, isGuest } = useAuth();
 
   const handleModeSelect = (mode: QuizMode) => {
     start(mode);
@@ -25,6 +28,10 @@ export default function HomeScreen() {
 
   const handleOpenVocab = () => {
     router.push('/vocab');
+  };
+
+  const handleAccountPress = () => {
+    router.push((isAuthenticated ? '/account' : '/login') as never);
   };
 
   return (
@@ -35,11 +42,18 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image source={logoImage} style={styles.logoIcon} />
-            <Text style={styles.logoText}>
-              <Text style={styles.logoV}>V</Text>ocabio
-            </Text>
+          <View style={styles.logoRow}>
+            <View style={styles.logoContainer}>
+              <Image source={logoImage} style={styles.logoIcon} />
+              <Text style={styles.logoText}>
+                <Text style={styles.logoV}>V</Text>ocabio
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleAccountPress} style={styles.accountButton} accessibilityLabel="Mon compte">
+              <Text style={styles.accountButtonText}>
+                {isAuthenticated ? '👤' : 'Se connecter'}
+              </Text>
+            </TouchableOpacity>
           </View>
           <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
         </View>
@@ -85,10 +99,28 @@ const styles = StyleSheet.create({
   header: {
     gap: Spacing.sm,
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+  },
+  accountButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  accountButtonText: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textPrimary,
   },
   logoIcon: {
     width: 50,
