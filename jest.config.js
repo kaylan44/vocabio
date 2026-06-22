@@ -9,5 +9,7 @@ module.exports = {
       '<rootDir>/__mocks__/@react-native-async-storage/async-storage.ts',
     '^react-native-reanimated$': '<rootDir>/__mocks__/react-native-reanimated.ts',
     '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.ts',
+    '^@supabase/supabase-js$': '<rootDir>/__mocks__/@supabase/supabase-js.ts',
+    '^react-native-url-polyfill/auto$': '<rootDir>/__mocks__/react-native-url-polyfill/auto.ts',
   },
 };

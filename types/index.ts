@@ -70,3 +70,16 @@ export interface SessionResult {
   total: number;
   mode: QuizMode;
 }
+
+// ─── Auth types ───────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  email: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
+  provider: string | null;
+  createdAt: string | null;
+}
+
+export type AuthStatus = 'loading' | 'authenticated' | 'guest' | 'unauthenticated';
