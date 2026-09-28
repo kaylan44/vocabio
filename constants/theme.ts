@@ -127,7 +127,6 @@ export const MESSAGING_CONFIG = {
   typingThrottleMs: 2000,  // min delay between two outgoing "typing" events
   typingTimeoutMs: 4000,   // hide the indicator if no event received for this long
   searchDebounceMs: 300,
-  searchMinLength: 2,
   reconnectDelayMs: 3000,  // retry after an auth rejection (socket.io won't retry by itself)
 } as const;
 

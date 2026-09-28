@@ -75,6 +75,8 @@ export const messagingApi = {
       method: 'PATCH',
     }),
 
+  listUsers: () => request<ChatUser[]>('/users'),
+
   searchUsers: (query: string) =>
     request<ChatUser[]>(`/users/search?q=${encodeURIComponent(query)}`),
 };

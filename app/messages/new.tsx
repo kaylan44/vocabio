@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TextInput,
 import { useRouter } from 'expo-router';
 import { UserRow } from '../../components/messaging/UserRow';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
-import { Colors, MESSAGING_CONFIG, Radius, Spacing, Typography } from '../../constants/theme';
+import { Colors, Radius, Spacing, Typography } from '../../constants/theme';
 import { useUserSearch } from '../../hooks/useUserSearch';
 import type { ChatUser } from '../../types';
 
@@ -25,13 +25,9 @@ export default function NewConversationScreen() {
 
   const renderEmpty = () => {
     if (status === 'loading') return <ActivityIndicator style={styles.hint} color={Colors.primary} />;
-    if (status === 'error') return <Text style={styles.hint}>La recherche a échoué. Réessayez.</Text>;
-    if (status === 'ready') return <Text style={styles.hint}>Aucun utilisateur trouvé.</Text>;
-    return (
-      <Text style={styles.hint}>
-        Tapez au moins {MESSAGING_CONFIG.searchMinLength} caractères du nom d'un apprenant.
-      </Text>
-    );
+    if (status === 'error') return <Text style={styles.hint}>Le chargement a échoué. Réessayez.</Text>;
+    if (query.trim()) return <Text style={styles.hint}>Aucun utilisateur trouvé.</Text>;
+    return <Text style={styles.hint}>Aucun autre apprenant pour l'instant.</Text>;
   };
 
   return (
@@ -42,7 +38,7 @@ export default function NewConversationScreen() {
           style={styles.input}
           value={query}
           onChangeText={setQuery}
-          placeholder="Rechercher par nom…"
+          placeholder="Filtrer par nom…"
           placeholderTextColor={Colors.textTertiary}
           autoFocus
           autoCapitalize="none"

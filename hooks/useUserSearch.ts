@@ -12,18 +12,15 @@ export function useUserSearch() {
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < MESSAGING_CONFIG.searchMinLength) {
-      setResults([]);
-      setStatus('idle');
-      return;
-    }
 
     // Ignore responses that arrive after the query changed (out-of-order network replies)
     let stale = false;
     setStatus('loading');
+    // Empty query lists everyone right away; typing narrows it server-side (the
+    // full list is capped, so filtering it locally could miss users).
     const timer = setTimeout(async () => {
       try {
-        const users = await messagingApi.searchUsers(q);
+        const users = q ? await messagingApi.searchUsers(q) : await messagingApi.listUsers();
         if (!stale) {
           setResults(users);
           setStatus('ready');
@@ -31,7 +28,7 @@ export function useUserSearch() {
       } catch {
         if (!stale) setStatus('error');
       }
-    }, MESSAGING_CONFIG.searchDebounceMs);
+    }, q ? MESSAGING_CONFIG.searchDebounceMs : 0);
 
     return () => {
       stale = true;
