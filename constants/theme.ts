@@ -107,6 +107,30 @@ export const Shadow = {
   }),
 } as const;
 
+export const AvatarSize = {
+  sm: 32,
+  md: 44,
+  lg: 80,
+} as const;
+
+export const ControlSize = {
+  iconButton: 40,
+  badgeMin: 18,
+  inputMaxHeight: 120,  // multiline chat input stops growing past ~5 lines
+  bubbleMaxWidth: '78%',
+} as const;
+
+// ─── Messaging constants ──────────────────────────────────────────────────────
+
+export const MESSAGING_CONFIG = {
+  pageSize: 30,
+  typingThrottleMs: 2000,  // min delay between two outgoing "typing" events
+  typingTimeoutMs: 4000,   // hide the indicator if no event received for this long
+  searchDebounceMs: 300,
+  searchMinLength: 2,
+  reconnectDelayMs: 3000,  // retry after an auth rejection (socket.io won't retry by itself)
+} as const;
+
 // ─── Quiz constants ───────────────────────────────────────────────────────────
 
 export const QUIZ_CONFIG = {

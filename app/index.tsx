@@ -11,7 +11,9 @@ import {
 import { ModeCard } from '../components/home/ModeCard';
 import { Button } from '../components/ui/Button';
 import { Colors, Radius, Spacing, Typography } from '../constants/theme';
+import { CounterBadge } from '../components/ui/CounterBadge';
 import { useAuth } from '../hooks/useAuth';
+import { useUnreadTotal } from '../hooks/useConversations';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { QuizMode } from '../types';
 
@@ -21,6 +23,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { start } = useQuizSession();
   const { isAuthenticated, isGuest } = useAuth();
+  const unreadTotal = useUnreadTotal();
 
   const handleModeSelect = (mode: QuizMode) => {
     start(mode);
@@ -28,6 +31,10 @@ export default function HomeScreen() {
 
   const handleOpenVocab = () => {
     router.push('/vocab');
+  };
+
+  const handleMessagesPress = () => {
+    router.push('/messages' as never);
   };
 
   const handleAccountPress = () => {
@@ -49,11 +56,21 @@ export default function HomeScreen() {
                 <Text style={styles.logoV}>V</Text>ocabio
               </Text>
             </View>
-            <TouchableOpacity onPress={handleAccountPress} style={styles.accountButton} accessibilityLabel="Mon compte">
-              <Text style={styles.accountButtonText}>
-                {isAuthenticated ? '👤' : 'Se connecter'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {isAuthenticated ? (
+                <TouchableOpacity onPress={handleMessagesPress} style={styles.accountButton} accessibilityLabel="Messages">
+                  <Text style={styles.accountButtonText}>💬</Text>
+                  <View style={styles.unreadBadge}>
+                    <CounterBadge count={unreadTotal} />
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity onPress={handleAccountPress} style={styles.accountButton} accessibilityLabel="Mon compte">
+                <Text style={styles.accountButtonText}>
+                  {isAuthenticated ? '👤' : 'Se connecter'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
         </View>
@@ -108,6 +125,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -Spacing.xs - Spacing.xs / 2,
+    right: -Spacing.xs - Spacing.xs / 2,
   },
   accountButton: {
     paddingHorizontal: Spacing.md,

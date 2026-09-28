@@ -139,6 +139,32 @@ Session (quizStore.ts) :
 
 ---
 
+## Messagerie 1:1
+
+Backend : `vocabio-backend` (Express + Socket.io, Railway). URL via `EXPO_PUBLIC_API_URL` (défaut : prod Railway).
+Réservée aux utilisateurs authentifiés — `app/messages/_layout.tsx` redirige les invités vers `/login`.
+
+```
+app/messages/            index (liste) · [id] (chat) · new (recherche) · _layout (garde auth)
+components/messaging/    ConversationRow, MessageBubble, ChatInput, TypingIndicator, UserRow
+features/messaging/      messagingLogic.ts (fusion/dédup/tri, pur) · format.ts (dates)
+services/api.ts          client REST — JWT Supabase lu à chaque appel
+services/socket.ts       singleton socket.io — jamais connecté à l'import (rendu statique web)
+store/messagingStore.ts  conversations, fils de messages, typing (Zustand)
+hooks/                   useMessagingConnection (monté dans _layout racine), useConversations,
+                         useChat, useUserSearch
+```
+
+Règles :
+- Écritures (envoi, lecture) en REST uniquement ; le socket sert à recevoir (`new_message`, `message_read`, `user_typing`) et à émettre `join_conversation` / `typing`.
+- Chaque socket rejoint `user:<id>` côté serveur : la liste reçoit les messages sans `join_conversation`.
+- Messages stockés du plus récent au plus ancien (ordre API, FlatList `inverted`).
+- Envoi optimiste avec id `local-*`, remplacé par la réponse REST ou l'écho socket (le premier arrivé) — voir `confirmMessage`.
+- Pagination par offset = nombre de messages confirmés en mémoire (inclut ceux reçus en direct).
+- À chaque (re)connexion et retour au premier plan : rechargement de la liste et du fil ouvert.
+
+---
+
 ## Design system (constants/theme.ts)
 
 Toujours utiliser les tokens du theme, jamais de valeurs hardcodées.
