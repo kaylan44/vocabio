@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useProgressStore } from '../store/progressStore';
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/theme';
+import { useMessagingConnection } from '../hooks/useMessagingConnection';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,6 +38,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  useMessagingConnection();
   const loadProgress = useProgressStore(s => s.loadProgress);
   const init = useAuthStore(s => s.init);
   const cleanupRef = useRef<(() => void) | null>(null);

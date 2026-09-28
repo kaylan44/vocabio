@@ -83,3 +83,75 @@ export interface AuthUser {
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'guest' | 'unauthenticated';
+
+// ─── Messaging types ──────────────────────────────────────────────────────────
+// Shapes mirror the vocabio-backend API. Dates are ISO strings (JSON-serialized).
+
+export interface ChatUser {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+}
+
+export interface LastMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  senderId: string;
+}
+
+export interface Conversation {
+  id: string;
+  createdAt: string;
+  otherParticipant: ChatUser | null;
+  lastMessage: LastMessage | null;
+  unreadCount: number;
+}
+
+// Local-only state for optimistic messages. Absent = confirmed by the server.
+export type DeliveryState = 'sending' | 'failed';
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  readAt: string | null;
+  sender: ChatUser;
+  deliveryState?: DeliveryState;
+}
+
+export interface MessagesPage {
+  messages: Message[];
+  pagination: { offset: number; limit: number; count: number };
+}
+
+// POST /conversations returns the raw Prisma shape, not a Conversation.
+export interface CreateConversationResponse {
+  id: string;
+  createdAt: string;
+  participants: { conversationId: string; userId: string; user: ChatUser }[];
+}
+
+export interface MessageReadEvent {
+  conversationId: string;
+  readAt: string;
+  readByUserId: string;
+}
+
+export interface TypingEvent {
+  conversationId: string;
+  userId: string;
+  username: string;
+}
+
+export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+// Messages are stored newest-first, matching the API order and the inverted chat list.
+export interface ChatThread {
+  messages: Message[];
+  status: LoadStatus;
+  hasMore: boolean;
+  loadingOlder: boolean;
+}
