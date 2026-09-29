@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import {
@@ -11,7 +12,7 @@ import { TileGrid } from '../components/quiz/TileGrid';
 import { WordCard } from '../components/quiz/WordCard';
 import { Button } from '../components/ui/Button';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Colors, Radius, Spacing, Typography } from '../constants/theme';
+import { Colors, ControlSize, Radius, Spacing, Typography } from '../constants/theme';
 import { useQuizSession } from '../hooks/useQuizSession';
 
 export default function QuizScreen() {
@@ -46,8 +47,8 @@ export default function QuizScreen() {
 
         {/* Top bar: back + score */}
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={goHome} style={styles.backBtn}>
-            <Text style={styles.backIcon}>←</Text>
+          <TouchableOpacity onPress={goHome} style={styles.backBtn} accessibilityLabel="Quitter le quiz">
+            <Ionicons name="close" size={ControlSize.buttonIcon} color={Colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.scoreChip}>
@@ -130,10 +131,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  backIcon: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.textPrimary,
   },
   scoreChip: {
     flexDirection: 'row',

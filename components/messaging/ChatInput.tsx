@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
 
 interface ChatInputProps {
@@ -46,7 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, onTyping }) => {
         disabled={!canSend}
         accessibilityLabel="Envoyer"
       >
-        <Text style={styles.sendIcon}>➤</Text>
+        <Ionicons name="send" size={ControlSize.buttonIcon} color={Colors.textOnPrimary} />
       </TouchableOpacity>
     </View>
   );
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    fontSize: Typography.sizes.md,
+    fontSize: Typography.sizes.input,
     color: Colors.textPrimary,
   },
   send: {
@@ -86,9 +87,5 @@ const styles = StyleSheet.create({
   },
   sendDisabled: {
     backgroundColor: Colors.border,
-  },
-  sendIcon: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.textOnPrimary,
   },
 });

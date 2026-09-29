@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import {
@@ -8,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
+import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { getWordsByCategory } from '../data/vocabulary';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { GrammarCategory, VocabWord, WordLevel } from '../types';
@@ -91,8 +92,8 @@ export default function VocabularyScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backBtn} accessibilityLabel="Retour">
+          <Ionicons name="arrow-back" size={ControlSize.buttonIcon} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.title}>
@@ -180,10 +181,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  backIcon: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.textPrimary,
   },
   categoryGrid: {
     flexDirection: 'row',
