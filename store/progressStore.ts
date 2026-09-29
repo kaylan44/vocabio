@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserProgress, WordModeProgress, QuizMode } from '../types';
-import { QUIZ_CONFIG } from '../constants/theme';
+import { QUIZ_CONFIG } from '../constants/config';
 
 export interface WordCombinedProgress {
   totalSeen: number;

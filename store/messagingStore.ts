@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { MESSAGING_CONFIG } from '../constants/theme';
+import { MESSAGING_CONFIG } from '../constants/config';
 import {
   applyMessageToConversation,
   applyReadReceipt,

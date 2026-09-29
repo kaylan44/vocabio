@@ -6,7 +6,7 @@ jest.mock('../services/api', () => ({
 }));
 
 import { act, renderHook } from '@testing-library/react-hooks';
-import { MESSAGING_CONFIG } from '../constants/theme';
+import { MESSAGING_CONFIG } from '../constants/config';
 import { useUserSearch } from '../hooks/useUserSearch';
 import { messagingApi } from '../services/api';
 
