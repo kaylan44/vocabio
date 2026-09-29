@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
+import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
 import { GrammarCategory, WordLevel } from '../../types';
+import { Flag } from '../ui/Flag';
 
 const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   noun: 'Nom',
@@ -21,9 +22,10 @@ interface WordCardProps {
 
 export const WordCard: React.FC<WordCardProps> = ({ word, category, language, level }) => (
   <View style={styles.container}>
-    <Text style={styles.languageHint}>
-      {language === 'fr' ? '🇫🇷' : '🇪🇸'} {language === 'fr' ? 'Français' : 'Espagnol'}
-    </Text>
+    <View style={styles.languageRow}>
+      <Flag country={language} height={ControlSize.flagSmall} />
+      <Text style={styles.languageHint}>{language === 'fr' ? 'Français' : 'Espagnol'}</Text>
+    </View>
     <Text style={styles.word}>{word}</Text>
     <View style={styles.badgeRow}>
       <View style={styles.categoryBadge}>
@@ -46,10 +48,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs + Spacing.xs / 2,
+    marginBottom: Spacing.sm,
+  },
   languageHint: {
     fontSize: Typography.sizes.sm,
     color: Colors.textTertiary,
-    marginBottom: Spacing.sm,
     fontWeight: Typography.weights.medium,
   },
   word: {

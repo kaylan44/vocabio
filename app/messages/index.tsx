@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { ConversationRow } from '../../components/messaging/ConversationRow';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
@@ -47,7 +48,7 @@ export default function ConversationsScreen() {
         onBack={() => router.replace('/')}
         trailing={
           <TouchableOpacity style={styles.newButton} onPress={openSearch} accessibilityLabel="Nouvelle conversation">
-            <Text style={styles.newIcon}>✎</Text>
+            <Ionicons name="create-outline" size={ControlSize.buttonIcon} color={Colors.textOnPrimary} />
           </TouchableOpacity>
         }
       />
@@ -77,10 +78,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  newIcon: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.textOnPrimary,
   },
   separator: {
     height: 1,

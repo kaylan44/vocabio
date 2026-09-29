@@ -5,24 +5,26 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { Colors, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
 import { QuizMode } from '../../types';
+import { Flag, FlagCountry } from '../ui/Flag';
 
 interface ModeCardProps {
   mode: QuizMode;
   onPress: (mode: QuizMode) => void;
 }
 
-const MODE_CONFIG = {
+const MODE_CONFIG: Record<QuizMode, { from: FlagCountry; to: FlagCountry; description: string }> = {
   'fr-es': {
-    from: '🇫🇷',
-    to: '🇪🇸',
-    description: "Apprends le français",
+    from: 'fr',
+    to: 'es',
+    description: "Français vers Espagnol",
   },
   'es-fr': {
-    from: '🇪🇸',
-    to: '🇫🇷',
-    description: "Apprends l'espagnol",
+    from: 'es',
+    to: 'fr',
+    description: "Espagnol vers Français",
   },
 };
 
@@ -47,11 +49,11 @@ export const ModeCard: React.FC<ModeCardProps> = ({ mode, onPress }) => {
       <View style={styles.card}>
         {/* Flag row */}
         <View style={styles.flagRow}>
-          <Text style={styles.flag}>{config.from}</Text>
+          <Flag country={config.from} />
           <View style={styles.arrowContainer}>
-            <Text style={styles.arrow}>→</Text>
+            <Ionicons name="arrow-forward" size={ControlSize.buttonIcon} color={Colors.primary} />
           </View>
-          <Text style={styles.flag}>{config.to}</Text>
+          <Flag country={config.to} />
         </View>
 
         {/* Description */}
@@ -82,17 +84,9 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     marginBottom: Spacing.xs,
   },
-  flag: {
-    fontSize: 36,
-  },
   arrowContainer: {
     flex: 1,
     alignItems: 'center',
-  },
-  arrow: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.primary,
-    fontWeight: Typography.weights.bold,
   },
   description: {
     fontSize: Typography.sizes.md,

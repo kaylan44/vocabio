@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    fontSize: Typography.sizes.md,
+    fontSize: Typography.sizes.input,
     color: Colors.textPrimary,
   },
   hint: {

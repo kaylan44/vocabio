@@ -6,20 +6,29 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Colors, Typography, Radius, Spacing } from '../../constants/theme';
+import { Colors, ControlSize, Typography, Radius, Spacing } from '../../constants/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
+
+const LABEL_COLORS: Record<Variant, string> = {
+  primary: Colors.textOnPrimary,
+  secondary: Colors.textPrimary,
+  ghost: Colors.textSecondary,
+};
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
   variant?: Variant;
+  icon?: keyof typeof Ionicons.glyphMap;
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -31,6 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
   label,
   onPress,
   variant = 'primary',
+  icon,
   disabled = false,
   loading = false,
   style,
@@ -66,9 +76,18 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? Colors.textOnPrimary : Colors.primary} />
       ) : (
-        <Text style={[styles.label, styles[`${variant}Label`] as TextStyle, disabled && styles.disabledLabel]}>
-          {label}
-        </Text>
+        <View style={styles.content}>
+          {icon ? (
+            <Ionicons
+              name={icon}
+              size={ControlSize.buttonIcon}
+              color={disabled ? Colors.textTertiary : LABEL_COLORS[variant]}
+            />
+          ) : null}
+          <Text style={[styles.label, styles[`${variant}Label`] as TextStyle, disabled && styles.disabledLabel]}>
+            {label}
+          </Text>
+        </View>
       )}
     </AnimatedTouchable>
   );
@@ -95,6 +114,11 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   label: {
     fontSize: Typography.sizes.md,

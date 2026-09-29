@@ -3,6 +3,7 @@ import { Image, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableO
 import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { useAuth } from '../hooks/useAuth';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -85,6 +86,12 @@ export default function AccountScreen() {
 
   if (isLoading || !user) return null;
 
+  // Direct load of /account (e.g. web refresh) has no history to go back to.
+  const handleBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/' as never);
+  };
+
   const formattedDate = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString('fr-FR', {
         day: 'numeric',
@@ -95,11 +102,8 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <ScreenHeader title="Mon compte" onBack={handleBack} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.screenTitle}>Mon compte</Text>
-        </View>
 
         {/* Avatar + name */}
         <View style={styles.profileCard}>
@@ -133,14 +137,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.xxl,
     gap: Spacing.xl,
-  },
-  header: {
-    alignItems: 'center',
-  },
-  screenTitle: {
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.weights.bold,
-    color: Colors.textPrimary,
   },
   profileCard: {
     backgroundColor: Colors.surface,

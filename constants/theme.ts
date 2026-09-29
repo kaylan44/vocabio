@@ -32,7 +32,6 @@ export const Colors = {
   tileIdle: '#FFFFFF',
   tileIdleBorder: '#E8EAF0',
 } as const;
-
 export const Typography = {
   // Font family — Expo uses system fonts by default.
   // For production, load 'Outfit' via expo-font for a distinct feel.
@@ -50,6 +49,8 @@ export const Typography = {
     xl: 22,
     xxl: 28,
     display: 36,
+    // Text inputs must be >= 16px, otherwise iOS Safari zooms the page on focus.
+    input: 16,
   },
 
   weights: {
@@ -115,6 +116,11 @@ export const AvatarSize = {
 
 export const ControlSize = {
   iconButton: 40,
+  headerIconButton: 48,
+  headerIcon: 26,
+  buttonIcon: 20,
+  flag: 32,  // flag height, width follows the 3:2 ratio
+  flagSmall: 14,
   badgeMin: 18,
   inputMaxHeight: 120,  // multiline chat input stops growing past ~5 lines
   bubbleMaxWidth: '78%',

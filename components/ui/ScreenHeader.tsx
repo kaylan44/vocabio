@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
 
 interface ScreenHeaderProps {
@@ -13,7 +14,7 @@ interface ScreenHeaderProps {
 export const ScreenHeader: React.FC<ScreenHeaderProps> = ({ title, subtitle, onBack, leading, trailing }) => (
   <View style={styles.bar}>
     <TouchableOpacity onPress={onBack} style={styles.iconButton} accessibilityLabel="Retour">
-      <Text style={styles.backIcon}>←</Text>
+      <Ionicons name="arrow-back" size={ControlSize.buttonIcon} color={Colors.textPrimary} />
     </TouchableOpacity>
     {leading}
     <View style={styles.titles}>
@@ -44,10 +45,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  backIcon: {
-    fontSize: Typography.sizes.lg,
-    color: Colors.textPrimary,
   },
   titles: {
     flex: 1,
