@@ -1,25 +1,33 @@
 # AGENTS.md — Vocabio
 
-> Ce fichier est destiné aux agents IA travaillant sur le projet.
-> Il décrit l'architecture, les conventions, les règles à respecter et les points d'extension.
+> This file is meant for AI agents working on the project.
+> It describes the architecture, conventions, rules to follow and extension points.
+>
+> **It must stay accurate**: any PR that changes the project structure (files/folders added,
+> moved or removed), the dataset (`data/*`), the core types or the business rules updates
+> this file in the same PR. Outdated agent docs are worse than no docs.
 
 ---
 
-## Vue d'ensemble
+## Overview
 
-**Vocabio** est une application mobile de quiz de vocabulaire Espagnol ↔ Français.
-- React Native + Expo (SDK 55+)
-- Expo Router (file-based routing)
-- TypeScript strict
+**Vocabio** is a mobile vocabulary quiz app for Spanish ↔ French, with user accounts and
+1:1 messaging.
+- React Native + Expo (SDK 55) — targets iOS, Android and web
+- Expo Router (file-based routing, typed routes)
+- Strict TypeScript
 - Zustand (state management)
-- AsyncStorage (persistance locale)
+- AsyncStorage (local progress persistence)
 - React Native Reanimated 4 + react-native-worklets (animations)
+- Supabase Auth (Google SSO — web only for now, guest mode available)
+- Messaging: REST + Socket.io to `vocabio-backend` (Express, hosted on Railway)
+- Tests: Jest + jest-expo + React Native Testing Library
 
 ---
 
-## Stack et versions
+## Stack and versions
 
-| Package | Version stable à utiliser |
+| Package | Stable version to use |
 |---|---|
 | react | 19.2.0 |
 | react-native | 0.83.6 |
@@ -29,63 +37,108 @@
 | react-native-reanimated | 4.2.1 |
 | react-native-worklets | 0.7.4 |
 | @react-native-async-storage/async-storage | 2.2.0 |
+| @supabase/supabase-js | ^2.x |
+| socket.io-client | ^4.8.x |
 
 ---
 
-## Structure du projet
+## Project structure
 
 ```
-vocabio/
-├── app/                        Écrans — Expo Router (file-based)
-│   ├── _layout.tsx             Root layout, charge la progression AsyncStorage
-│   ├── index.tsx               Home screen — choix du mode
-│   ├── quiz.tsx                Quiz screen — session active
-│   └── result.tsx              Result screen — score final
+vocabio2/
+├── app/                        Screens — Expo Router (file-based)
+│   ├── _layout.tsx             Root layout: AuthGate, loads progress + auth session, mounts the messaging connection
+│   ├── login.tsx               Google sign-in or guest mode
+│   ├── index.tsx               Home — pick FR→ES / ES→FR
+│   ├── quiz.tsx                Quiz — active session
+│   ├── result.tsx              Result — final score, replay
+│   ├── vocab.tsx               Vocabulary list with per-word progress
+│   ├── account.tsx             User profile, sign out
+│   └── messages/
+│       ├── _layout.tsx         Auth guard — redirects guests to /login
+│       ├── index.tsx           Conversation list
+│       ├── [id].tsx            Chat thread
+│       └── new.tsx             User search / new conversation
 │
 ├── components/
-│   ├── ui/                     Composants génériques réutilisables
-│   │   ├── Button.tsx          Bouton animé — variants: primary | secondary | ghost
-│   │   ├── Badge.tsx           Badge texte coloré
-│   │   └── ProgressBar.tsx     Barre de progression animée
-│   ├── quiz/                   Composants spécifiques au quiz
-│   │   ├── WordCard.tsx        Affiche le mot à traduire + catégorie + langue
-│   │   ├── AnswerTile.tsx      Tuile de réponse avec états et animations
-│   │   └── TileGrid.tsx        Grille 2x2 de AnswerTile
-│   └── home/
-│       └── ModeCard.tsx        Carte de sélection du mode FR→ES ou ES→FR
+│   ├── ui/                     Generic reusable components
+│   │   ├── Button.tsx          Animated button — variants: primary | secondary | ghost
+│   │   ├── Badge.tsx           Colored text badge
+│   │   ├── CounterBadge.tsx    Counter pill (unread)
+│   │   ├── ProgressBar.tsx     Animated progress bar
+│   │   ├── ScreenHeader.tsx    Screen header (back, title, leading/trailing slots)
+│   │   ├── Avatar.tsx          User avatar (image or initials)
+│   │   ├── Flag.tsx            FR / ES flag (assets/flags/)
+│   │   └── GoogleLogo.tsx      Google logo for the SSO button
+│   ├── quiz/                   Quiz-specific components
+│   │   ├── WordCard.tsx        Shows the word to translate + category + level
+│   │   ├── AnswerTile.tsx      Answer tile with states and animations
+│   │   └── TileGrid.tsx        2x2 grid of AnswerTile
+│   ├── home/
+│   │   └── ModeCard.tsx        FR→ES or ES→FR mode selection card
+│   └── messaging/
+│       ├── ConversationRow.tsx Conversation list row
+│       ├── MessageBubble.tsx   Message bubble
+│       ├── ChatInput.tsx       Multiline input + send
+│       ├── TypingIndicator.tsx "is typing" indicator
+│       └── UserRow.tsx         User search result row
 │
-├── features/
-│   └── quiz/
-│       └── quizEngine.ts       Logique pure — pas de UI, pas de store
+├── features/                   Pure logic — no UI, no store
+│   ├── quiz/quizEngine.ts      Weighted selection, distractors, session building
+│   └── messaging/
+│       ├── messagingLogic.ts   Merge / dedupe / sort messages
+│       └── format.ts           Date formatting
 │
-├── store/
-│   ├── quizStore.ts            État de la session en cours (Zustand)
-│   └── progressStore.ts        Progression persistante (Zustand + AsyncStorage)
+├── store/                      Zustand
+│   ├── quizStore.ts            Current session state
+│   ├── progressStore.ts        Persistent progress (AsyncStorage)
+│   ├── authStore.ts            Auth status (loading | unauthenticated | guest | authenticated) + user
+│   └── messagingStore.ts       Conversations, message threads, typing
 │
-├── hooks/
-│   └── useQuizSession.ts       Hook principal — seul point d'entrée pour les écrans
+├── hooks/                      Screens' entry points to the stores
+│   ├── useQuizSession.ts       Quiz — single entry point for the quiz/vocab screens
+│   ├── useAuth.ts              Auth
+│   ├── useMessagingConnection.ts  Socket lifecycle (mounted in the root _layout)
+│   ├── useConversations.ts     Conversation list
+│   ├── useChat.ts              Chat thread + sending + typing
+│   └── useUserSearch.ts        User search (debounced)
 │
-├── data/
-│   └── vocabulary.ts           300 mots mock (100 noms, 100 verbes, 100 adjectifs)
+├── services/
+│   ├── api.ts                  vocabio-backend REST client (Supabase JWT read on every call)
+│   └── socket.ts               socket.io singleton (never connected at import time)
 │
-├── types/
-│   └── index.ts                Tous les types TypeScript du projet
+├── lib/
+│   ├── supabase.ts             Supabase client (AsyncStorage on native, localStorage on web)
+│   └── auth.ts                 Google Sign-In flow (web done, native to do)
 │
-└── constants/
-    └── theme.ts                Design system — couleurs, typo, espacements, ombres
+├── data/                       Vocabulary dataset, one file per category
+│   ├── vocabulary.ts           Aggregates the files below into VOCABULARY + helpers
+│   ├── nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · expressions.ts · pronouns.ts
+│
+├── types/index.ts              All the project's TypeScript types
+│
+├── constants/
+│   ├── theme.ts                Design system — colors, typography, spacing, sizes, shadows
+│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG
+│
+├── __tests__/                  Jest tests (logic, stores, hooks, components)
+└── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets…)
 ```
 
 ---
 
-## Types principaux
+## Core types
 
 ```typescript
+type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun';
+type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+
 interface VocabWord {
   id: string;
   french: string;
   spanish: string;
-  category: 'noun' | 'verb' | 'adjective' | 'adverb' | 'phrase';
-  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+  category: GrammarCategory;
+  level: WordLevel;
 }
 
 type QuizMode = 'fr-es' | 'es-fr';
@@ -96,6 +149,7 @@ interface QuizQuestion {
   correctAnswer: string;
   options: string[];
   category: GrammarCategory;
+  level: WordLevel;
 }
 
 type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-correct' | 'disabled';
@@ -103,78 +157,87 @@ type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-corr
 type MasteryLevel = 'new' | 'seen' | 'mastered';
 ```
 
+Auth and messaging types (`AuthUser`, `AuthStatus`, `ChatUser`, `Conversation`, `Message`…): see `types/index.ts`.
+
 ---
 
-## Flux de données
+## Data flow
 
 ```
 useQuizSession (hook)
-    quizStore       état de la session active (questions, index, score, réponse)
-    progressStore   progression persistée par mot et par mode
+    quizStore       active session state (questions, index, score, answer)
+    progressStore   progress persisted per word and per mode
     navigation      Expo Router (push/replace)
 
-Écrans -> useQuizSession uniquement (jamais les stores directement)
+Screens -> hooks only (never the stores directly)
+Exception: app/_layout.tsx initialises progressStore and authStore at startup.
 ```
 
 ---
 
-## Règles de la logique quiz
+## Quiz logic rules
 
-Génération d'une session (quizEngine.ts) :
-- 10 questions par session
-- Sélection pondérée : new (poids 10) > seen (poids 5) > mastered (poids 1)
-- Un mot n'apparaît qu'une seule fois par session
-- 3 distracteurs tirés de la même catégorie grammaticale que le mot cible
+The numbers below are defined in `QUIZ_CONFIG` (`constants/config.ts`).
 
-Progression (progressStore.ts) :
-- FR→ES et ES→FR ont des compteurs indépendants
-- mastered = 3 bonnes réponses consécutives (correctStreak >= 3)
-- La progression est persistée immédiatement après chaque réponse via AsyncStorage
-- Clé AsyncStorage : @vocabio_progress_v1
+Session generation (quizEngine.ts):
+- 10 questions per session
+- Weighted selection: new (weight 10) > seen (weight 5) > mastered (weight 1)
+- A word appears only once per session
+- 3 distractors drawn from the same grammatical category as the target word
 
-Session (quizStore.ts) :
-- selectAnswer est idempotent — ignore les appels si hasAnswered === true
-- nextQuestion avance l'index ; l'écran navigue vers /result si c'est la dernière question
-- resetSession vide complètement le store — appeler avant chaque nouvelle session
+Progress (progressStore.ts):
+- FR→ES and ES→FR have independent counters (keys `frEs` and `esF` — `esF` is a historical typo, do not rename it without a storage migration)
+- mastered = 3 correct answers in a row (correctStreak >= 3)
+- Progress is persisted right after each answer via AsyncStorage
+- AsyncStorage key: @vocabio_progress_v1
+- Progress is local to the device, including for signed-in users (not synced yet)
+
+Session (quizStore.ts):
+- selectAnswer is idempotent — ignores calls when hasAnswered === true
+- nextQuestion advances the index; the screen navigates to /result on the last question
+- resetSession fully clears the store — call it before each new session
 
 ---
 
-## Messagerie 1:1
+## Authentication
 
-Backend : `vocabio-backend` (Express + Socket.io, Railway). URL via `EXPO_PUBLIC_API_URL` (défaut : prod Railway).
-Réservée aux utilisateurs authentifiés — `app/messages/_layout.tsx` redirige les invités vers `/login`.
+- `authStore.init()` restores the Supabase session, then subscribes to `onAuthStateChange`.
+- Guest mode: `@vocabio_guest` flag in AsyncStorage, cleared as soon as a Supabase session exists.
+- `AuthGate` (`app/_layout.tsx`) redirects `unauthenticated` users to `/login`.
+- Google Sign-In: implemented on web (OAuth redirect). On native, `performGoogleSignIn` returns
+  an error until the PKCE flow (expo-auth-session + dev build) is in place.
+- Environment variables: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+  (public anon key, never the service_role key).
 
-```
-app/messages/            index (liste) · [id] (chat) · new (recherche) · _layout (garde auth)
-components/messaging/    ConversationRow, MessageBubble, ChatInput, TypingIndicator, UserRow
-features/messaging/      messagingLogic.ts (fusion/dédup/tri, pur) · format.ts (dates)
-services/api.ts          client REST — JWT Supabase lu à chaque appel
-services/socket.ts       singleton socket.io — jamais connecté à l'import (rendu statique web)
-store/messagingStore.ts  conversations, fils de messages, typing (Zustand)
-hooks/                   useMessagingConnection (monté dans _layout racine), useConversations,
-                         useChat, useUserSearch
-```
+---
 
-Règles :
-- Écritures (envoi, lecture) en REST uniquement ; le socket sert à recevoir (`new_message`, `message_read`, `user_typing`) et à émettre `join_conversation` / `typing`.
-- Chaque socket rejoint `user:<id>` côté serveur : la liste reçoit les messages sans `join_conversation`.
-- Messages stockés du plus récent au plus ancien (ordre API, FlatList `inverted`).
-- Envoi optimiste avec id `local-*`, remplacé par la réponse REST ou l'écho socket (le premier arrivé) — voir `confirmMessage`.
-- Pagination par offset = nombre de messages confirmés en mémoire (inclut ceux reçus en direct).
-- À chaque (re)connexion et retour au premier plan : rechargement de la liste et du fil ouvert.
+## 1:1 messaging
+
+Backend: `vocabio-backend` (Express + Socket.io, Railway). URL via `EXPO_PUBLIC_API_URL` (default: Railway prod).
+Restricted to authenticated users — `app/messages/_layout.tsx` redirects guests to `/login`.
+
+Rules:
+- Writes (send, mark read) go through REST only; the socket is for receiving (`new_message`, `message_read`, `user_typing`) and emitting `join_conversation` / `typing`.
+- Every socket joins `user:<id>` on the server: the list receives messages without `join_conversation`.
+- Messages are stored newest first (API order, `inverted` FlatList).
+- Optimistic send with a `local-*` id, replaced by the REST response or the socket echo (whichever comes first) — see `confirmMessage`.
+- Pagination by offset = number of confirmed messages in memory (includes those received live).
+- On every (re)connection and return to foreground: reload the list and the open thread.
+- Delays, page size and throttling: `MESSAGING_CONFIG` (`constants/config.ts`).
 
 ---
 
 ## Design system (constants/theme.ts)
 
-Toujours utiliser les tokens du theme, jamais de valeurs hardcodées.
+Always use the theme tokens, never hardcoded values.
+`theme.ts` only holds visual values; behaviour constants go in `constants/config.ts`.
 
 ```typescript
-Colors.primary          #4A7CF7 — bleu principal
-Colors.success          #4DB87A — vert réponse correcte
-Colors.error            #F26B5E — rouge réponse incorrecte
-Colors.background       #F8F9FC — fond général
-Colors.surface          #FFFFFF — cartes et tuiles
+Colors.primary          #4A7CF7 — main blue
+Colors.success          #4DB87A — correct answer green
+Colors.error            #F26B5E — wrong answer red
+Colors.background       #F8F9FC — app background
+Colors.surface          #FFFFFF — cards and tiles
 Colors.textPrimary      #1A1D2E
 Colors.textSecondary    #6B7280
 Colors.textTertiary     #9CA3AF
@@ -183,69 +246,77 @@ Spacing.xs / sm / md / lg / xl / xxl   4 / 8 / 16 / 24 / 32 / 48
 Radius.sm / md / lg / xl / full        8 / 12 / 16 / 24 / 999
 Typography.sizes.xs -> display          11 -> 36
 Typography.weights.regular -> extrabold '400' -> '800'
+Shadow.* · AvatarSize.* · ControlSize.*  shadows, avatars, icons, flags, max widths…
 ```
 
 ---
 
-## Conventions de code
+## Code conventions
 
-- Composants : functional components uniquement, pas de class components
-- Styles : StyleSheet.create() dans chaque fichier, jamais de styles inline sauf cas exceptionnel
-- Animations : uniquement via react-native-reanimated — pas d'Animated de React Native core
-- Navigation : uniquement via useRouter() d'Expo Router — jamais de navigation directe depuis les stores
-- Accès aux stores : uniquement depuis useQuizSession ou _layout.tsx — les écrans ne touchent pas les stores directement
-- Types : tous dans types/index.ts — pas de types inline dans les composants sauf interfaces de props locales
-- IDs des mots : format n001-n100 (nouns), v001-v100 (verbs), a001-a100 (adjectives)
-
----
-
-## Dataset vocabulaire
-
-300 mots dans data/vocabulary.ts :
-
-| Catégorie | A1 | A2 | B1 | B2 | Total |
-|---|---|---|---|---|---|
-| noun | 25 | 25 | 25 | 25 | 100 |
-| verb | 25 | 25 | 25 | 25 | 100 |
-| adjective | 25 | 25 | 25 | 25 | 100 |
-
-Pour ajouter des mots : respecter le format existant et incrémenter les IDs dans la séquence.
+- Components: function components only, no class components
+- Styles: StyleSheet.create() in each file, never inline styles except in exceptional cases
+- Animations: react-native-reanimated only — no Animated from React Native core
+- Navigation: only via Expo Router's useRouter() — never navigate from the stores
+- Store access: only from hooks (`hooks/`) or `app/_layout.tsx` — screens never touch the stores directly
+- Pure logic (testable without React) goes in `features/`
+- Types: all in types/index.ts — no inline types in components except local prop interfaces
+- Word IDs: category prefix + 3 digits, continuous sequence with no gaps (see table below)
 
 ---
 
-## Points d'extension prévus
+## Vocabulary dataset
 
-| Feature | Fichier cible | Notes |
+630 words split across `data/*.ts`, aggregated by `data/vocabulary.ts`:
+
+| Category | File | IDs | A1 | A2 | B1 | Total |
+|---|---|---|---|---|---|---|
+| noun | nouns.ts | n001–n200 | 80 | 70 | 50 | 200 |
+| verb | verbs.ts | v001–v100 | 50 | 50 | — | 100 |
+| adjective | adjectives.ts | a001–a150 | 75 | 75 | — | 150 |
+| adverb | adverbs.ts | d001–d100 | 50 | 50 | — | 100 |
+| expression | expressions.ts | e001–e050 | 50 | — | — | 50 |
+| pronoun | pronouns.ts | p001–p030 | 30 | — | — | 30 |
+| **Total** | | | **335** | **245** | **50** | **630** |
+
+To add words: add them to the category file, continue the ID sequence
+(e.g. the next noun is `n201`) and **update this table**.
+Never renumber an existing ID: persisted progress refers to it.
+
+---
+
+## Planned extension points
+
+| Feature | Target file | Notes |
 |---|---|---|
-| Dark mode | constants/theme.ts | Ajouter DarkColors, hook useTheme() |
-| Sons | features/audio/soundEngine.ts | expo-av |
-| Streaks | store/progressStore.ts | Ajouter currentStreak, bestStreak dans UserProgress |
-| Spaced repetition (SM-2) | features/quiz/quizEngine.ts | Remplacer le système de poids par l'algorithme SM-2 |
-| Filtre par niveau | app/index.tsx + quizEngine.ts | Passer le niveau choisi à buildQuizSession() |
-| Auth + profils | services/auth.ts | Remplacer AsyncStorage par API calls |
-| Autres langues | types/index.ts + data/ | Ajouter champ language dans VocabWord |
-| Backend | services/api.ts | Remplacer data/vocabulary.ts par des appels réseau |
+| Dark mode | constants/theme.ts | Add DarkColors, useTheme() hook |
+| Sounds / pronunciation | features/audio/ | expo-speech (TTS) or expo-audio |
+| Streaks | store/progressStore.ts | Add currentStreak, bestStreak to UserProgress |
+| Spaced repetition (SM-2) | features/quiz/quizEngine.ts | Replace the weight system with the SM-2 algorithm |
+| Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
+| Native Google Sign-In | lib/auth.ts | expo-auth-session (PKCE) + dev build |
+| Progress sync | store/progressStore.ts + backend | Sync with Supabase for signed-in users |
+| More languages | types/index.ts + data/ | Add a language field to VocabWord |
 
 ---
 
-## Erreurs connues et solutions
+## Known errors and fixes
 
-| Erreur | Cause | Solution |
+| Error | Cause | Fix |
 |---|---|---|
-| Cannot find module react-native-worklets/plugin | react-native-worklets non installé | npm install react-native-worklets@0.7.4 |
-| ERESOLVE peer deps | Conflit de versions | npm install --legacy-peer-deps |
-| Cannot find module babel-preset-expo | Template sans Expo Router | Utiliser --template tabs pour create-expo-app |
-| Écran blanc / App.tsx affiché | Template blank-typescript utilisé | Utiliser --template tabs |
-| libnspr4.so cannot open shared object file | React Native DevTools manquant sur Linux | Ignorable, ou sudo apt-get install libnspr4 |
+| Cannot find module react-native-worklets/plugin | react-native-worklets not installed | npm install react-native-worklets@0.7.4 |
+| ERESOLVE peer deps | Version conflict | npm install --legacy-peer-deps |
+| libnspr4.so cannot open shared object file | React Native DevTools missing on Linux | Safe to ignore, or sudo apt-get install libnspr4 |
+| "Google Sign-In not yet configured for native." | Native flow not implemented | Test sign-in on web, or use guest mode |
 
 ---
 
-## Commandes utiles
+## Useful commands
 
 ```bash
 npx expo start --clear
 npx expo start --ios
 npx expo start --android
 npx tsc --noEmit
+npm test
 rm -rf node_modules package-lock.json && npm install --legacy-peer-deps
 ```

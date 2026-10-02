@@ -1,6 +1,6 @@
 import { VOCABULARY, getWordsByCategory } from '../../data/vocabulary';
 import { QuizMode, QuizQuestion, QuizSession, VocabWord, WordModeProgress } from '../../types';
-import { QUIZ_CONFIG } from '../../constants/theme';
+import { QUIZ_CONFIG } from '../../constants/config';
 
 // ─── Word selection ───────────────────────────────────────────────────────────
 

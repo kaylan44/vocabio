@@ -5,7 +5,7 @@
 // only exist while a user is authenticated.
 
 import { io, Socket } from 'socket.io-client';
-import { MESSAGING_CONFIG } from '../constants/theme';
+import { MESSAGING_CONFIG } from '../constants/config';
 import { API_URL, getAccessToken } from './api';
 
 let socket: Socket | null = null;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MESSAGING_CONFIG } from '../constants/theme';
+import { MESSAGING_CONFIG } from '../constants/config';
 import { messagingApi } from '../services/api';
 import { useMessagingStore } from '../store/messagingStore';
 import type { ChatUser, LoadStatus } from '../types';

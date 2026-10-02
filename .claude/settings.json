@@ -1,5 +1,38 @@
 {
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.*.local)",
+      "Edit(**/.env.development)",
+      "Edit(**/.env.production)",
+      "Bash(cat .env*)",
+      "Bash(git push *--force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push -f*)",
+      "Bash(git push *+*)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main*)",
+      "PowerShell(git push *--force*)",
+      "PowerShell(git push * -f*)",
+      "PowerShell(git push -f*)",
+      "PowerShell(git push *+*)",
+      "PowerShell(git push * main)",
+      "PowerShell(git push * main *)",
+      "PowerShell(git push *:main*)",
+      "Bash(npm publish)",
+      "Bash(npm publish *)",
+      "PowerShell(npm publish)",
+      "PowerShell(npm publish *)"
+    ]
   }
 }

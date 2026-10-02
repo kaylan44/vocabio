@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { MESSAGING_CONFIG } from '../constants/theme';
+import { MESSAGING_CONFIG } from '../constants/config';
 import { emitTyping, forgetConversation, joinConversation } from '../services/socket';
 import { useMessagingStore } from '../store/messagingStore';
 import type { ChatThread } from '../types';
