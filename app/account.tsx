@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { StatsCard } from '../components/account/StatsCard';
 import { useAuth } from '../hooks/useAuth';
+import { useQuizStats } from '../hooks/useQuizStats';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -77,6 +79,7 @@ function Avatar({ uri, name }: { uri: string | null; name: string | null }) {
 export default function AccountScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
+  const { stats, status: statsStatus, refresh: refreshStats } = useQuizStats();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -118,6 +121,8 @@ export default function AccountScreen() {
           <View style={styles.separator} />
           <InfoRow label="Membre depuis" value={formattedDate} />
         </View>
+
+        <StatsCard stats={stats} status={statsStatus} onRetry={refreshStats} />
 
         {/* Sign out */}
         <SignOutButton onPress={signOut} />

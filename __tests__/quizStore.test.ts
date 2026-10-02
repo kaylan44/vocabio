@@ -1,3 +1,4 @@
+import { randomUUID } from 'expo-crypto';
 import { useQuizStore } from '../store/quizStore';
 
 const emptyProgressMap = {};
@@ -15,6 +16,25 @@ describe('quizStore', () => {
     expect(session?.questions).toHaveLength(10);
     expect(session?.currentIndex).toBe(0);
     expect(session?.score).toBe(0);
+  });
+
+  it('gives every session its own id', () => {
+    const firstId = useQuizStore.getState().session?.id;
+    freshSession();
+    const secondId = useQuizStore.getState().session?.id;
+    expect(firstId).toBeTruthy();
+    expect(secondId).toBeTruthy();
+    expect(secondId).not.toBe(firstId);
+  });
+
+  it('still starts a session, with a valid UUID, when crypto.randomUUID is unavailable', () => {
+    (randomUUID as jest.Mock).mockImplementationOnce(() => {
+      throw new TypeError('crypto.randomUUID is not a function');
+    });
+    freshSession();
+    const { session } = useQuizStore.getState();
+    expect(session?.questions).toHaveLength(10);
+    expect(session?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it('selectAnswer sets hasAnswered to true', () => {

@@ -21,6 +21,7 @@
 - React Native Reanimated 4 + react-native-worklets (animations)
 - Supabase Auth (Google SSO — web only for now, guest mode available)
 - Messaging: REST + Socket.io to `vocabio-backend` (Express, hosted on Railway)
+- Quiz statistics: finished quizzes sent to `vocabio-backend` (REST), stats shown on the account screen
 - Tests: Jest + jest-expo + React Native Testing Library
 
 ---
@@ -39,6 +40,7 @@
 | @react-native-async-storage/async-storage | 2.2.0 |
 | @supabase/supabase-js | ^2.x |
 | socket.io-client | ^4.8.x |
+| expo-crypto | ~55.0.x |
 
 ---
 
@@ -53,7 +55,7 @@ vocabio2/
 │   ├── quiz.tsx                Quiz — active session
 │   ├── result.tsx              Result — final score, replay
 │   ├── vocab.tsx               Vocabulary list with per-word progress
-│   ├── account.tsx             User profile, sign out
+│   ├── account.tsx             User profile, quiz statistics, sign out
 │   └── messages/
 │       ├── _layout.tsx         Auth guard — redirects guests to /login
 │       ├── index.tsx           Conversation list
@@ -76,6 +78,8 @@ vocabio2/
 │   │   └── TileGrid.tsx        2x2 grid of AnswerTile
 │   ├── home/
 │   │   └── ModeCard.tsx        FR→ES or ES→FR mode selection card
+│   ├── account/
+│   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
 │   └── messaging/
 │       ├── ConversationRow.tsx Conversation list row
 │       ├── MessageBubble.tsx   Message bubble
@@ -84,7 +88,7 @@ vocabio2/
 │       └── UserRow.tsx         User search result row
 │
 ├── features/                   Pure logic — no UI, no store
-│   ├── quiz/quizEngine.ts      Weighted selection, distractors, session building
+│   ├── quiz/quizEngine.ts      Weighted selection, distractors, session building, backend payload
 │   └── messaging/
 │       ├── messagingLogic.ts   Merge / dedupe / sort messages
 │       └── format.ts           Date formatting
@@ -97,6 +101,7 @@ vocabio2/
 │
 ├── hooks/                      Screens' entry points to the stores
 │   ├── useQuizSession.ts       Quiz — single entry point for the quiz/vocab screens
+│   ├── useQuizStats.ts         Quiz statistics from the backend (reloaded on screen focus)
 │   ├── useAuth.ts              Auth
 │   ├── useMessagingConnection.ts  Socket lifecycle (mounted in the root _layout)
 │   ├── useConversations.ts     Conversation list
@@ -122,7 +127,7 @@ vocabio2/
 │   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG
 │
 ├── __tests__/                  Jest tests (logic, stores, hooks, components)
-└── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets…)
+└── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets, expo-crypto…)
 ```
 
 ---
@@ -157,7 +162,8 @@ type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-corr
 type MasteryLevel = 'new' | 'seen' | 'mastered';
 ```
 
-Auth and messaging types (`AuthUser`, `AuthStatus`, `ChatUser`, `Conversation`, `Message`…): see `types/index.ts`.
+Auth, messaging and quiz statistics types (`AuthUser`, `AuthStatus`, `ChatUser`, `Conversation`,
+`Message`, `QuizSessionPayload`, `QuizStats`…): see `types/index.ts`.
 
 ---
 
@@ -167,6 +173,8 @@ Auth and messaging types (`AuthUser`, `AuthStatus`, `ChatUser`, `Conversation`, 
 useQuizSession (hook)
     quizStore       active session state (questions, index, score, answer)
     progressStore   progress persisted per word and per mode
+    authStore       auth status — decides whether the finished session is sent
+    quizApi         POST /quiz-sessions when a signed-in user finishes a quiz
     navigation      Expo Router (push/replace)
 
 Screens -> hooks only (never the stores directly)
@@ -196,6 +204,30 @@ Session (quizStore.ts):
 - selectAnswer is idempotent — ignores calls when hasAnswered === true
 - nextQuestion advances the index; the screen navigates to /result on the last question
 - resetSession fully clears the store — call it before each new session
+- startSession gives the session a UUID (`expo-crypto`, with a Math.random fallback where `crypto.randomUUID` is missing, e.g. web over plain http); `buildQuizSession` itself stays pure
+
+---
+
+## Quiz statistics
+
+Backend: `vocabio-backend`, same REST client and JWT as messaging (`quizApi` in `services/api.ts`).
+
+- `POST /quiz-sessions` — sent by `useQuizSession.nextQuestion` when leaving the last question,
+  just before navigating to `/result`. Body built by `buildSessionPayload` (quizEngine.ts):
+  `{ id, mode, answers: [{ wordId, category, level, isCorrect }] }`. The server computes the score.
+- `GET /quiz-sessions/stats` — read by `useQuizStats`, displayed by `StatsCard` on the account screen.
+
+Rules:
+- Only signed-in users send results. Guests have no JWT: nothing is sent, nothing is queued.
+- Only finished quizzes are sent. Closing a quiz midway sends nothing.
+- The session `id` is the idempotency key: the backend answers `200` to a repeated `id`, so a
+  double tap or a retry never creates a duplicate.
+- Sending is fire-and-forget: a failure is logged (`console.warn`) and never blocks the result
+  screen. There is no offline retry queue yet.
+- Statistics are computed by the backend only. The local per-word progress (`progressStore`)
+  is a separate system and is not sent.
+- `mostMissedWords` contains ids only; the card resolves them with `getWordById` and skips ids
+  that are no longer in the local vocabulary.
 
 ---
 

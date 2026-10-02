@@ -1,5 +1,12 @@
 import { VOCABULARY, getWordsByCategory } from '../../data/vocabulary';
-import { QuizMode, QuizQuestion, QuizSession, VocabWord, WordModeProgress } from '../../types';
+import {
+  QuizMode,
+  QuizQuestion,
+  QuizSession,
+  QuizSessionPayload,
+  VocabWord,
+  WordModeProgress,
+} from '../../types';
 import { QUIZ_CONFIG } from '../../constants/config';
 
 // ─── Word selection ───────────────────────────────────────────────────────────
@@ -93,14 +100,14 @@ function buildQuestion(word: VocabWord, mode: QuizMode): QuizQuestion {
 // ─── Session builder ──────────────────────────────────────────────────────────
 
 /**
- * Build a full quiz session.
+ * Build a full quiz session. The id is added by quizStore so this stays pure.
  * @param mode          Direction of translation
  * @param progressMap   Current progress per word (for mode)
  */
 export function buildQuizSession(
   mode: QuizMode,
   progressMap: Record<string, WordModeProgress | undefined>
-): QuizSession {
+): Omit<QuizSession, 'id'> {
   const count = QUIZ_CONFIG.questionsPerSession;
 
   // Select words with weighted probability
@@ -120,11 +127,33 @@ export function buildQuizSession(
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
-export function isSessionComplete(session: QuizSession): boolean {
+type SessionCursor = Pick<QuizSession, 'questions' | 'currentIndex'>;
+
+export function isSessionComplete(session: SessionCursor): boolean {
   return session.currentIndex >= session.questions.length;
 }
 
-export function getCurrentQuestion(session: QuizSession): QuizQuestion | null {
+export function getCurrentQuestion(session: SessionCursor): QuizQuestion | null {
   if (isSessionComplete(session)) return null;
   return session.questions[session.currentIndex];
+}
+
+// ─── Backend payload ──────────────────────────────────────────────────────────
+
+/**
+ * Build the body of POST /quiz-sessions from a finished session.
+ * Returns null while a question is still unanswered: only complete quizzes are sent.
+ */
+export function buildSessionPayload(session: QuizSession): QuizSessionPayload | null {
+  const answers: QuizSessionPayload['answers'] = [];
+
+  for (let i = 0; i < session.questions.length; i++) {
+    const isCorrect = session.answers[i];
+    if (isCorrect === null || isCorrect === undefined) return null;
+    const { wordId, category, level } = session.questions[i];
+    answers.push({ wordId, category, level, isCorrect });
+  }
+
+  if (answers.length === 0) return null;
+  return { id: session.id, mode: session.mode, answers };
 }
