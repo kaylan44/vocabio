@@ -9,6 +9,9 @@ import type {
   CreateConversationResponse,
   Message,
   MessagesPage,
+  QuizSessionPayload,
+  QuizStats,
+  SavedQuizSession,
 } from '../types';
 
 export const API_URL =
@@ -79,4 +82,15 @@ export const messagingApi = {
 
   searchUsers: (query: string) =>
     request<ChatUser[]>(`/users/search?q=${encodeURIComponent(query)}`),
+};
+
+export const quizApi = {
+  // Idempotent on payload.id: 201 when stored, 200 when already stored, so a retry is safe.
+  saveSession: (payload: QuizSessionPayload) =>
+    request<SavedQuizSession>('/quiz-sessions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getStats: () => request<QuizStats>('/quiz-sessions/stats'),
 };

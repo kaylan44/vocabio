@@ -1,12 +1,16 @@
 import { useCallback, useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { buildSessionPayload } from '../features/quiz/quizEngine';
+import { quizApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import { useQuizStore } from '../store/quizStore';
 import { useProgressStore } from '../store/progressStore';
 import { QuizMode } from '../types';
 
 /**
  * Central hook for the quiz flow.
- * Coordinates: quizStore (session state) + progressStore (persistence) + navigation.
+ * Coordinates: quizStore (session state) + progressStore (persistence) + navigation,
+ * and sends finished sessions to the backend for signed-in users.
  */
 export function useQuizSession() {
   const router = useRouter();
@@ -22,6 +26,7 @@ export function useQuizSession() {
   } = useQuizStore();
 
   const { getModeProgressMap, recordAnswer, getWordModeProgress, getWordCombinedProgress } = useProgressStore();
+  const isAuthenticated = useAuthStore(s => s.status === 'authenticated');
 
   // ─── Start a new session ─────────────────────────────────────────────────────
   const start = useCallback((mode: QuizMode) => {
@@ -47,12 +52,18 @@ export function useQuizSession() {
     const isLastQuestion = session.currentIndex >= session.questions.length - 1;
 
     if (isLastQuestion) {
+      // Guests have no JWT: their results are not stored on the backend.
+      const payload = isAuthenticated ? buildSessionPayload(session) : null;
+      if (payload) {
+        // Fire and forget — a network failure must not block the result screen.
+        quizApi.saveSession(payload).catch(err => console.warn('Quiz session not saved', err));
+      }
       // Navigate to result — session data stays in store until reset
       router.push('/result');
     } else {
       storeNextQuestion();
     }
-  }, [session, storeNextQuestion, router]);
+  }, [session, isAuthenticated, storeNextQuestion, router]);
 
   // ─── Replay same mode ────────────────────────────────────────────────────────
   const replay = useCallback(() => {

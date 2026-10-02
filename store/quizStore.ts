@@ -1,6 +1,25 @@
+import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
 import { QuizSession, QuizMode } from '../types';
 import { buildQuizSession } from '../features/quiz/quizEngine';
+
+// ─── Session id ───────────────────────────────────────────────────────────────
+
+/**
+ * On web, crypto.randomUUID() only exists in secure contexts (HTTPS or localhost).
+ * The quiz must still start elsewhere (e.g. the dev server opened through a LAN IP),
+ * so fall back to a Math.random-based UUID v4: it is an idempotency key, not a secret.
+ */
+function createSessionId(): string {
+  try {
+    return randomUUID();
+  } catch {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.floor(Math.random() * 16);
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+}
 
 // ─── Store definition ─────────────────────────────────────────────────────────
 
@@ -23,7 +42,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
   // ─── Start a new session ─────────────────────────────────────────────────────
   startSession: (mode, progressMap) => {
-    const session = buildQuizSession(mode, progressMap);
+    const session = { id: createSessionId(), ...buildQuizSession(mode, progressMap) };
     set({ session, selectedAnswer: null, hasAnswered: false });
   },
 
