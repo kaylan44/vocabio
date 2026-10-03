@@ -29,6 +29,7 @@ export interface QuizQuestion {
 export type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-correct' | 'disabled';
 
 export interface QuizSession {
+  id: string;                    // UUID — idempotency key when the result is sent to the backend
   mode: QuizMode;
   questions: QuizQuestion[];
   currentIndex: number;
@@ -69,6 +70,43 @@ export interface SessionResult {
   score: number;
   total: number;
   mode: QuizMode;
+}
+
+// ─── Quiz statistics types ────────────────────────────────────────────────────
+// Shapes mirror the vocabio-backend API (/quiz-sessions).
+
+export interface QuizAnswerPayload {
+  wordId: string;
+  category: GrammarCategory;
+  level: WordLevel;
+  isCorrect: boolean;
+}
+
+export interface QuizSessionPayload {
+  id: string;
+  mode: QuizMode;
+  answers: QuizAnswerPayload[];  // in quiz order
+}
+
+// The score is computed by the server.
+export interface SavedQuizSession {
+  id: string;
+  mode: QuizMode;
+  score: number;
+  total: number;
+  createdAt: string;
+}
+
+export interface QuizStats {
+  totalSessions: number;
+  totalAnswers: number;
+  totalCorrect: number;
+  accuracy: number | null;        // 0..1, null when there is no data
+  lastSessionAt: string | null;
+  byMode: { mode: QuizMode; sessions: number; answers: number; correct: number; accuracy: number }[];
+  byCategory: { category: GrammarCategory; answers: number; correct: number; accuracy: number }[];
+  byLevel: { level: WordLevel; answers: number; correct: number; accuracy: number }[];
+  mostMissedWords: { wordId: string; wrong: number }[];  // top 10, ids only
 }
 
 // ─── Auth types ───────────────────────────────────────────────────────────────

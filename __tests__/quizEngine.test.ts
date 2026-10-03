@@ -1,11 +1,12 @@
 import {
   buildQuizSession,
+  buildSessionPayload,
   isSessionComplete,
   getCurrentQuestion,
   selectWeightedWords,
 } from '../features/quiz/quizEngine';
 import { VOCABULARY } from '../data/vocabulary';
-import { WordModeProgress } from '../types';
+import { QuizSession, WordModeProgress } from '../types';
 
 const emptyProgress = {};
 
@@ -125,5 +126,35 @@ describe('getCurrentQuestion', () => {
     const session = buildQuizSession('fr-es', emptyProgress);
     const done = { ...session, currentIndex: session.questions.length };
     expect(getCurrentQuestion(done)).toBeNull();
+  });
+});
+
+describe('buildSessionPayload', () => {
+  const answered = (answers: (boolean | null)[]): QuizSession => ({
+    id: 'session-1',
+    ...buildQuizSession('es-fr', emptyProgress),
+    answers,
+  });
+
+  it('pairs each question with its answer, in quiz order', () => {
+    const answers = [true, false, true, true, false, true, true, true, false, true];
+    const session = answered(answers);
+    const payload = buildSessionPayload(session)!;
+
+    expect(payload.id).toBe('session-1');
+    expect(payload.mode).toBe('es-fr');
+    expect(payload.answers).toEqual(
+      session.questions.map((q, i) => ({
+        wordId: q.wordId,
+        category: q.category,
+        level: q.level,
+        isCorrect: answers[i],
+      })),
+    );
+  });
+
+  it('returns null while a question is unanswered', () => {
+    const answers = [...new Array(9).fill(true), null];
+    expect(buildSessionPayload(answered(answers))).toBeNull();
   });
 });

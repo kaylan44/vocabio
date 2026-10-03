@@ -12,6 +12,7 @@ Stack: React Native · Expo SDK 55 · TypeScript · Expo Router · Zustand · Re
 - **Vocabulary list** — 630 words (nouns, verbs, adjectives, adverbs, expressions, pronouns), levels A1 → B1
 - **Authentication** — Google SSO through Supabase (web) or guest mode
 - **1:1 messaging** — real-time conversations, typing indicator, read receipts, optimistic sending
+- **Quiz statistics** — finished quizzes of signed-in users are stored on the backend; the account screen shows quizzes played and accuracy by direction, category and level, plus the most-missed words
 
 ---
 
@@ -60,10 +61,10 @@ npm test           # Jest tests
 
 ```
 app/            Screens (Expo Router) — login, home, quiz, result, vocab, account, messages/*
-components/     UI — ui/ (generic), quiz/, home/, messaging/
+components/     UI — ui/ (generic), quiz/, home/, account/, messaging/
 features/       Pure logic, no React or store — quizEngine, messagingLogic
 store/          Zustand state — quiz, progress, auth, messaging
-hooks/          The only way screens reach the stores (useQuizSession, useAuth, useChat…)
+hooks/          The only way screens reach the stores (useQuizSession, useQuizStats, useAuth, useChat…)
 services/       REST and socket.io clients for vocabio-backend
 lib/            Supabase client and authentication flow
 data/           Vocabulary dataset, one file per category
