@@ -15,6 +15,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
+import { HomeMascot } from '../components/home/HomeMascot';
 import { ModeCard } from '../components/home/ModeCard';
 import { Button } from '../components/ui/Button';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../constants/theme';
@@ -83,7 +84,10 @@ export default function HomeScreen() {
           bounces={false}
           overScrollMode="never"
         >
-          <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
+          <View style={styles.hero}>
+            <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
+            <HomeMascot />
+          </View>
 
           {/* Mode selection */}
           <View style={styles.section}>
@@ -220,7 +224,15 @@ const styles = StyleSheet.create({
     color: Colors.success,
     fontWeight: Typography.weights.extrabold,
   },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
   tagline: {
+    // Shrinks to wrap on phones, keeps its natural width on wide screens so the
+    // mascot stays next to the text instead of drifting to the far right.
+    flexShrink: 1,
     fontSize: Typography.sizes.md,
     color: Colors.textSecondary,
     fontWeight: Typography.weights.regular,

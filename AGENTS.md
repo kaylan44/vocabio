@@ -71,12 +71,15 @@ vocabio2/
 │   │   ├── ScreenHeader.tsx    Screen header (back, title, leading/trailing slots)
 │   │   ├── Avatar.tsx          User avatar (image or initials)
 │   │   ├── Flag.tsx            FR / ES flag (assets/flags/)
-│   │   └── GoogleLogo.tsx      Google logo for the SSO button
+│   │   ├── GoogleLogo.tsx      Google logo for the SSO button
+│   │   └── MascotSprite.tsx    One mascot pose (run | hug | cool | happy) from assets/mascot/
 │   ├── quiz/                   Quiz-specific components
 │   │   ├── WordCard.tsx        Shows the word to translate + category + level
 │   │   ├── AnswerTile.tsx      Answer tile with states and animations
-│   │   └── TileGrid.tsx        2x2 grid of AnswerTile
+│   │   ├── TileGrid.tsx        2x2 grid of AnswerTile
+│   │   └── ResultMascot.tsx    Happy mascot head popping up above the score on the result card
 │   ├── home/
+│   │   ├── HomeMascot.tsx      Animated mascot: runs in, idles, sunglasses on tap
 │   │   └── ModeCard.tsx        FR→ES or ES→FR mode selection card
 │   ├── account/
 │   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
@@ -124,7 +127,11 @@ vocabio2/
 │
 ├── constants/
 │   ├── theme.ts                Design system — colors, typography, spacing, sizes, shadows
-│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG
+│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG, MASCOT_CONFIG
+│
+├── assets/
+│   ├── flags/                  FR / ES flags
+│   └── mascot/                 Mascot sprites (transparent PNG) — run, hug, cool, happy
 │
 ├── __tests__/                  Jest tests (logic, stores, hooks, components)
 └── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets, expo-crypto…)
@@ -279,7 +286,25 @@ Radius.sm / md / lg / xl / full        8 / 12 / 16 / 24 / 999
 Typography.sizes.xs -> display          11 -> 36
 Typography.weights.regular -> extrabold '400' -> '800'
 Shadow.* · AvatarSize.* · ControlSize.*  shadows, avatars, icons, flags, max widths…
+MascotSize.*                             mascot sprite heights and motion distances
 ```
+
+---
+
+## Mascot
+
+Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`components/ui/`).
+
+- Home (`HomeMascot`): runs in from the left on mount, then floats and breathes in a loop.
+  A tap swaps to the sunglasses pose for `MASCOT_CONFIG.coolMs`, then back to idle.
+- Result (`ResultMascot`): inside the result card, right above the score. The happy head rises
+  after the card entrance, wiggles once and stays. Shown for every score.
+- Timings are in `MASCOT_CONFIG` (`constants/config.ts`), sizes and distances in `MascotSize`
+  (`constants/theme.ts`).
+- Both components honour the system "reduce motion" setting (`useReducedMotion`): the final
+  pose is shown without the entrance.
+- Replacing a sprite: keep the file name, and update its `ratio` in `MascotSprite.tsx` if the
+  image dimensions change.
 
 ---
 

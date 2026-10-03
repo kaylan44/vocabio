@@ -19,3 +19,15 @@ export const MESSAGING_CONFIG = {
   searchDebounceMs: 300,
   reconnectDelayMs: 3000,  // retry after an auth rejection (socket.io won't retry by itself)
 } as const;
+
+// ─── Mascot ───────────────────────────────────────────────────────────────────
+
+export const MASCOT_CONFIG = {
+  enterMs: 1400,        // Home: run in from the left
+  hopMs: 190,           // one half-hop (up or down) while running
+  floatMs: 1600,        // idle: one way up or down
+  breatheMs: 2200,      // idle: one breath in or out
+  coolMs: 2000,         // how long the sunglasses stay on after a tap
+  resultDelayMs: 600,   // Result: wait for the card entrance before popping up
+  resultRiseMs: 400,    // Result: head is up, start the wiggle
+} as const;

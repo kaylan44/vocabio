@@ -31,6 +31,9 @@ export const Colors = {
   // Tile states
   tileIdle: '#FFFFFF',
   tileIdleBorder: '#E8EAF0',
+
+  // Mascot
+  mascotShadow: 'rgba(26, 29, 46, 0.12)',
 } as const;
 export const Typography = {
   // Font family — Expo uses system fonts by default.
@@ -112,6 +115,24 @@ export const AvatarSize = {
   sm: 32,
   md: 44,
   lg: 80,
+} as const;
+
+export const MascotSize = {
+  // Home — box the mascot lives in, next to the tagline
+  homeWidth: 104,
+  homeHeight: 124,
+  // Sprite heights (width follows each sprite's ratio)
+  run: 112,
+  idle: 106,
+  cool: 96,
+  result: 96,
+  // Ground shadow
+  shadowWidth: 64,
+  shadowHeight: 8,
+  // Motion distances
+  enterDistance: 240,  // how far left the run starts
+  hopHeight: 10,
+  floatHeight: 6,
 } as const;
 
 export const ControlSize = {

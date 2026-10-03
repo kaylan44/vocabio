@@ -19,7 +19,18 @@ export const useDerivedValue = (fn: () => any) => ({ value: fn() });
 export const cancelAnimation = noop;
 export const interpolate = (val: number, _input: number[], output: number[]) => output[0];
 export const Extrapolate = { CLAMP: 'clamp' };
-export const Easing = { linear: (t: number) => t, bezier: () => (t: number) => t };
+export const useReducedMotion = () => false;
+const identity = (t: number) => t;
+const passThrough = (fn: (t: number) => number) => fn;
+export const Easing = {
+  linear: identity,
+  cubic: identity,
+  sin: identity,
+  bezier: () => identity,
+  in: passThrough,
+  out: passThrough,
+  inOut: passThrough,
+};
 
 export const createAnimatedComponent = (Component: React.ComponentType<any>) => Component;
 

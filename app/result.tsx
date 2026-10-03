@@ -13,6 +13,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { ResultMascot } from '../components/quiz/ResultMascot';
 import { Button } from '../components/ui/Button';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { useQuizSession } from '../hooks/useQuizSession';
@@ -73,6 +74,9 @@ export default function ResultScreen() {
           <Text style={styles.emoji}>{result.emoji}</Text>
           <Text style={styles.title}>{result.title}</Text>
           <Text style={styles.sub}>{result.sub}</Text>
+
+          {/* Mascot popping up right above the score */}
+          <ResultMascot />
 
           {/* Score display */}
           <View style={styles.scoreBig}>
