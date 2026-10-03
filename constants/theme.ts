@@ -10,6 +10,10 @@ export const Colors = {
   primaryLight: '#EEF3FF',
   primaryDark: '#2E5DD4',
 
+  // Accent — warm orange, second quiz mode on Home
+  accent: '#D0801C',
+  accentLight: '#FFF4E0',
+
   // Semantic
   success: '#4DB87A',
   successLight: '#E8F8EF',
@@ -141,8 +145,19 @@ export const ControlSize = {
   headerIcon: 26,
   buttonIcon: 20,
   flag: 32,  // flag height, width follows the 3:2 ratio
+  flagMedium: 24,
   flagSmall: 14,
+  flagPairWidth: 54,   // two overlapping flagMedium flags on a mode tile
+  flagPairHeight: 40,
+  flagPairLargeWidth: 72,  // same pair with two `flag` flags, on tablet / web
+  flagPairLargeHeight: 54,
+  flagRing: 2,         // ring in the tile colour around the front flag
   badgeMin: 18,
   inputMaxHeight: 120,  // multiline chat input stops growing past ~5 lines
   bubbleMaxWidth: '78%',
+} as const;
+
+export const Layout = {
+  tabletBreakpoint: 768,  // from this window width up, screens use their roomier layout
+  contentMaxWidth: 720,   // content column is centred and stops growing past this width
 } as const;

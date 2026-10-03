@@ -80,7 +80,7 @@ vocabio2/
 │   │   └── ResultMascot.tsx    Happy mascot head popping up above the score on the result card
 │   ├── home/
 │   │   ├── HomeMascot.tsx      Animated mascot: runs in, idles, sunglasses on tap
-│   │   └── ModeCard.tsx        FR→ES or ES→FR mode selection card
+│   │   └── ModeCard.tsx        FR→ES or ES→FR mode tile (two side by side, one tint per mode)
 │   ├── account/
 │   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
 │   └── messaging/
@@ -280,6 +280,7 @@ Colors.surface          #FFFFFF — cards and tiles
 Colors.textPrimary      #1A1D2E
 Colors.textSecondary    #6B7280
 Colors.textTertiary     #9CA3AF
+Colors.accent           #D0801C — warm orange, ES→FR mode tile (accentLight for its background)
 
 Spacing.xs / sm / md / lg / xl / xxl   4 / 8 / 16 / 24 / 32 / 48
 Radius.sm / md / lg / xl / full        8 / 12 / 16 / 24 / 999
@@ -287,6 +288,7 @@ Typography.sizes.xs -> display          11 -> 36
 Typography.weights.regular -> extrabold '400' -> '800'
 Shadow.* · AvatarSize.* · ControlSize.*  shadows, avatars, icons, flags, max widths…
 MascotSize.*                             mascot sprite heights and motion distances
+Layout.tabletBreakpoint / contentMaxWidth  768 / 720 — responsive breakpoint and centred content column (Home)
 ```
 
 ---

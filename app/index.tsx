@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -18,7 +19,7 @@ import Animated, {
 import { HomeMascot } from '../components/home/HomeMascot';
 import { ModeCard } from '../components/home/ModeCard';
 import { Button } from '../components/ui/Button';
-import { Colors, ControlSize, Radius, Spacing, Typography } from '../constants/theme';
+import { Colors, ControlSize, Layout, Radius, Spacing, Typography } from '../constants/theme';
 import { CounterBadge } from '../components/ui/CounterBadge';
 import { useAuth } from '../hooks/useAuth';
 import { useUnreadTotal } from '../hooks/useConversations';
@@ -32,6 +33,8 @@ export default function HomeScreen() {
   const { start } = useQuizSession();
   const { isAuthenticated } = useAuth();
   const unreadTotal = useUnreadTotal();
+  const { width } = useWindowDimensions();
+  const isWide = width >= Layout.tabletBreakpoint;
 
   // Top bar sits outside the ScrollView so it can't be pulled down,
   // and slides out of view as the user scrolls down (back in on scroll up).
@@ -93,8 +96,8 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Choisissez un mode</Text>
             <View style={styles.cards}>
-              <ModeCard mode="fr-es" onPress={handleModeSelect} />
-              <ModeCard mode="es-fr" onPress={handleModeSelect} />
+              <ModeCard mode="fr-es" onPress={handleModeSelect} large={isWide} />
+              <ModeCard mode="es-fr" onPress={handleModeSelect} large={isWide} />
             </View>
           </View>
 
@@ -112,30 +115,32 @@ export default function HomeScreen() {
 
         {/* Top bar */}
         <Animated.View style={[styles.topBar, topBarStyle]} onLayout={handleTopBarLayout}>
-          <View style={styles.logoContainer}>
-            <Image source={logoImage} style={styles.logoIcon} />
-            <Text style={styles.logoText}>
-              <Text style={styles.logoV}>V</Text>ocabio
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            {isAuthenticated ? (
-              <TouchableOpacity onPress={handleMessagesPress} style={styles.iconButton} accessibilityLabel="Messages">
-                <Ionicons name="paper-plane-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
-                <View style={styles.unreadBadge}>
-                  <CounterBadge count={unreadTotal} />
-                </View>
-              </TouchableOpacity>
-            ) : null}
-            {isAuthenticated ? (
-              <TouchableOpacity onPress={handleAccountPress} style={styles.iconButton} accessibilityLabel="Mon compte">
-                <Ionicons name="settings-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={handleAccountPress} style={styles.loginButton} accessibilityLabel="Se connecter">
-                <Text style={styles.loginButtonText}>Se connecter</Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.topBarContent}>
+            <View style={styles.logoContainer}>
+              <Image source={logoImage} style={styles.logoIcon} />
+              <Text style={styles.logoText}>
+                <Text style={styles.logoV}>V</Text>ocabio
+              </Text>
+            </View>
+            <View style={styles.headerActions}>
+              {isAuthenticated ? (
+                <TouchableOpacity onPress={handleMessagesPress} style={styles.iconButton} accessibilityLabel="Messages">
+                  <Ionicons name="paper-plane-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
+                  <View style={styles.unreadBadge}>
+                    <CounterBadge count={unreadTotal} />
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+              {isAuthenticated ? (
+                <TouchableOpacity onPress={handleAccountPress} style={styles.iconButton} accessibilityLabel="Mon compte">
+                  <Ionicons name="settings-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={handleAccountPress} style={styles.loginButton} accessibilityLabel="Se connecter">
+                  <Text style={styles.loginButtonText}>Se connecter</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </Animated.View>
       </View>
@@ -152,8 +157,13 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
   },
+  // The scroll content and the top bar content share one centred column, so
+  // the page stays readable on tablet and web instead of stretching edge to edge.
   scroll: {
     flexGrow: 1,
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xxl,
     gap: Spacing.xl,
@@ -163,13 +173,18 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    backgroundColor: Colors.background,
+  },
+  topBarContent: {
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
-    backgroundColor: Colors.background,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -249,6 +264,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   cards: {
+    flexDirection: 'row',
     gap: Spacing.md,
   },
   vocabSection: {
