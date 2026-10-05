@@ -17,11 +17,12 @@
 - Expo Router (file-based routing, typed routes)
 - Strict TypeScript
 - Zustand (state management)
-- AsyncStorage (local progress persistence)
+- AsyncStorage (guest flag and Supabase session only — no app data is stored on the device)
 - React Native Reanimated 4 + react-native-worklets (animations)
 - Supabase Auth (Google SSO — web only for now, guest mode available)
 - Messaging: REST + Socket.io to `vocabio-backend` (Express, hosted on Railway)
 - Quiz statistics: finished quizzes sent to `vocabio-backend` (REST), stats shown on the account screen
+- Word progress: computed by `vocabio-backend` from the finished quizzes, loaded at sign-in and after each finished quiz — signed-in users only
 - Articles: easy Spanish news with audio, served by `vocabio-backend` (REST) — signed-in users only, audio on web only for now
 - Tests: Jest + jest-expo + React Native Testing Library
 
@@ -52,7 +53,7 @@
 ```
 vocabio2/
 ├── app/                        Screens — Expo Router (file-based)
-│   ├── _layout.tsx             Root layout: AuthGate, loads progress + auth session, mounts the messaging connection
+│   ├── _layout.tsx             Root layout: AuthGate, loads the auth session, mounts the messaging connection and the progress sync
 │   ├── login.tsx               Google sign-in or guest mode
 │   ├── index.tsx               Home — pick FR→ES / ES→FR
 │   ├── quiz.tsx                Quiz — active session
@@ -115,13 +116,14 @@ vocabio2/
 │
 ├── store/                      Zustand
 │   ├── quizStore.ts            Current session state
-│   ├── progressStore.ts        Persistent progress (AsyncStorage)
+│   ├── progressStore.ts        Per-word progress: read-only in-memory copy of what the backend computes
 │   ├── authStore.ts            Auth status (loading | unauthenticated | guest | authenticated) + user
 │   └── messagingStore.ts       Conversations, message threads, typing
 │
 ├── hooks/                      Screens' entry points to the stores
 │   ├── useQuizSession.ts       Quiz — single entry point for the quiz/vocab screens
 │   ├── useQuizStats.ts         Quiz statistics from the backend (reloaded on screen focus)
+│   ├── useProgressSync.ts      Loads the progress at sign-in, empties it at sign-out (mounted in the root _layout)
 │   ├── useArticles.ts          Article list: level filter, pagination
 │   ├── useArticle.ts           One article with its text
 │   ├── useArticleAudio.ts      Article audio, downloaded on demand as a blob: URL (web only)
@@ -189,9 +191,9 @@ type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-corr
 type MasteryLevel = 'new' | 'seen' | 'mastered';
 ```
 
-Auth, messaging, quiz statistics and article types (`AuthUser`, `AuthStatus`, `ChatUser`,
-`Conversation`, `Message`, `QuizSessionPayload`, `QuizStats`, `ArticleSummary`, `Article`,
-`ArticleBlock`…): see `types/index.ts`.
+Auth, messaging, quiz statistics, word progress and article types (`AuthUser`, `AuthStatus`,
+`ChatUser`, `Conversation`, `Message`, `QuizSessionPayload`, `QuizStats`, `WordProgressRow`,
+`ArticleSummary`, `Article`, `ArticleBlock`…): see `types/index.ts`.
 
 ---
 
@@ -200,13 +202,18 @@ Auth, messaging, quiz statistics and article types (`AuthUser`, `AuthStatus`, `C
 ```
 useQuizSession (hook)
     quizStore       active session state (questions, index, score, answer)
-    progressStore   progress persisted per word and per mode
+    progressStore   progress per word and per mode (read-only copy of what the backend computes)
     authStore       auth status — decides whether the finished session is sent
-    quizApi         POST /quiz-sessions when a signed-in user finishes a quiz
+    quizApi         POST /quiz-sessions when a signed-in user finishes a quiz,
+                    then progressStore.loadProgress() to read the updated progress
     navigation      Expo Router (push/replace)
 
+useProgressSync (hook, mounted in app/_layout.tsx)
+    authStore       authenticated -> progressStore.loadProgress() (GET /quiz-sessions/word-progress)
+                    sign-out or user change -> progressStore.clearProgress()
+
 Screens -> hooks only (never the stores directly)
-Exception: app/_layout.tsx initialises progressStore and authStore at startup.
+Exception: app/_layout.tsx initialises authStore at startup.
 ```
 
 ---
@@ -222,11 +229,9 @@ Session generation (quizEngine.ts):
 - 3 distractors drawn from the same grammatical category as the target word
 
 Progress (progressStore.ts):
-- FR→ES and ES→FR have independent counters (keys `frEs` and `esF` — `esF` is a historical typo, do not rename it without a storage migration)
+- FR→ES and ES→FR have independent counters (keys `frEs` and `esF` — `esF` is a historical typo, kept as is)
 - mastered = 3 correct answers in a row (correctStreak >= 3)
-- Progress is persisted right after each answer via AsyncStorage
-- AsyncStorage key: @vocabio_progress_v1
-- Progress is local to the device, including for signed-in users (not synced yet)
+- Storage and sync: see "Word progress" below
 
 Session (quizStore.ts):
 - selectAnswer is idempotent — ignores calls when hasAnswered === true
@@ -252,10 +257,48 @@ Rules:
   double tap or a retry never creates a duplicate.
 - Sending is fire-and-forget: a failure is logged (`console.warn`) and never blocks the result
   screen. There is no offline retry queue yet.
-- Statistics are computed by the backend only. The local per-word progress (`progressStore`)
-  is a separate system and is not sent.
+- Statistics are computed by the backend only, and so is the per-word progress, from the same
+  stored answers (see "Word progress" below).
 - `mostMissedWords` contains ids only; the card resolves them with `getWordById` and skips ids
   that are no longer in the local vocabulary.
+
+---
+
+## Word progress
+
+There is no separate progress system: the backend computes the progress from the finished
+quizzes it already receives through `POST /quiz-sessions` (see "Quiz statistics" above).
+`progressStore` is a read-only, in-memory copy: nothing is written to AsyncStorage /
+localStorage, and the app never computes counters itself.
+
+- `GET /quiz-sessions/word-progress` (`quizApi.getWordProgress`) — `WordProgressRow[]`, one row
+  per word and per mode. Called by `progressStore.loadProgress`; `rowsToWords` groups the rows
+  by word.
+
+`loadProgress` runs at two moments:
+- when the user becomes authenticated (`useProgressSync`, mounted in the root layout);
+- right after a finished quiz was saved (`useQuizSession.nextQuestion`, once `saveSession`
+  has succeeded).
+
+Rules:
+- Only finished quizzes count. Answering a question changes nothing in `progressStore`; a
+  quiz closed midway leaves no trace, in progress as in statistics.
+- Guests have no progress at all: nothing is sent, nothing is loaded. Every word counts as new
+  in their quizzes and the vocabulary screen shows no counter.
+- If saving the quiz fails (offline, or the backend's 10-second rate limit between two
+  quizzes), its answers are lost for the progress too. There is no offline queue.
+- The reload after a quiz is asynchronous: a replay started immediately can still be built
+  from the previous progress.
+- The backend sends counters only. The mastery level is derived in the app by `computeMastery`
+  (threshold in `QUIZ_CONFIG.masteryThreshold`).
+- If a load fails, the store keeps what it already had (empty on a first load) with status
+  `error`; the next finished quiz or sign-in loads it again.
+- The store is emptied on sign-out and reloaded when another user signs in.
+- `useQuizSession` exposes `getWordModeProgress` / `getWordCombinedProgress` with a new identity
+  each time the progress changes: keep them in the dependencies of a `renderItem` so the rows
+  refresh once the progress has arrived from the network.
+- `useProgressSync` also deletes the old `@vocabio_progress_v1` AsyncStorage key left by
+  previous versions (the old local progress is not imported). Removable later.
 
 ---
 
@@ -373,7 +416,7 @@ Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`
 - Styles: StyleSheet.create() in each file, never inline styles except in exceptional cases
 - Animations: react-native-reanimated only — no Animated from React Native core
 - Navigation: only via Expo Router's useRouter() — never navigate from the stores
-- Store access: only from hooks (`hooks/`) or `app/_layout.tsx` — screens never touch the stores directly
+- Store access: only from hooks (`hooks/`), plus `authStore` in `app/_layout.tsx` — screens never touch the stores directly
 - Pure logic (testable without React) goes in `features/`
 - Types: all in types/index.ts — no inline types in components except local prop interfaces
 - Word IDs: category prefix + 3 digits, continuous sequence with no gaps (see table below)
@@ -396,7 +439,7 @@ Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`
 
 To add words: add them to the category file, continue the ID sequence
 (e.g. the next noun is `n201`) and **update this table**.
-Never renumber an existing ID: persisted progress refers to it.
+Never renumber an existing ID: the progress and quiz results stored on the backend refer to it.
 
 ---
 
@@ -408,11 +451,11 @@ Never renumber an existing ID: persisted progress refers to it.
 | Sounds / pronunciation | features/audio/ | expo-speech (TTS) or expo-audio |
 | Article audio on native | hooks/useArticleAudio.ts | Download to the cache directory (expo-file-system), then play the local file |
 | Article glosses in French | vocabio-backend | The source only provides English explanations |
-| Streaks | store/progressStore.ts | Add currentStreak, bestStreak to UserProgress |
+| Streaks | vocabio-backend + store/progressStore.ts | Add currentStreak, bestStreak (stored by the backend) |
 | Spaced repetition (SM-2) | features/quiz/quizEngine.ts | Replace the weight system with the SM-2 algorithm |
 | Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
 | Native Google Sign-In | lib/auth.ts | expo-auth-session (PKCE) + dev build |
-| Progress sync | store/progressStore.ts + backend | Sync with Supabase for signed-in users |
+| Offline quizzes | hooks/useQuizSession.ts | Queue finished sessions that could not be sent; safe to retry, the session id is an idempotency key |
 | More languages | types/index.ts + data/ | Add a language field to VocabWord |
 
 ---

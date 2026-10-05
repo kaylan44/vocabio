@@ -8,7 +8,7 @@ Stack: React Native · Expo SDK 55 · TypeScript · Expo Router · Zustand · Re
 ## Features
 
 - **FR→ES / ES→FR quiz** — 10-question sessions with 4 choices, answer animations
-- **Per-word, per-direction progress** — weighted selection that favours new words, "mastered" badge
+- **Per-word, per-direction progress** — weighted selection that favours new words, "mastered" badge; saved to the account of signed-in users and found again on any device (guests have no progress)
 - **Vocabulary list** — 630 words (nouns, verbs, adjectives, adverbs, expressions, pronouns), levels A1 → B1
 - **Authentication** — Google SSO through Supabase (web) or guest mode
 - **1:1 messaging** — real-time conversations, typing indicator, read receipts, optimistic sending
@@ -47,7 +47,7 @@ npx expo start          # then scan the QR code with Expo Go
 npx expo start --web    # web build (the only platform where Google Sign-In works for now)
 ```
 
-Without a Supabase configuration, the app still works in **guest mode** (quiz and local progress, no messaging, no articles).
+Without a Supabase configuration, the app still works in **guest mode** (quiz only: no saved progress, no statistics, no messaging, no articles).
 
 ## Validation
 
@@ -90,7 +90,9 @@ Words are drawn with a probability weighted by mastery:
 
 ### Independent progress per direction
 FR→ES and ES→FR each have their own mastery counter.
-A word can be mastered in one direction and new in the other. Progress is stored locally (AsyncStorage).
+A word can be mastered in one direction and new in the other.
+
+Progress is not stored on the device: `vocabio-backend` computes it from the finished quizzes it receives, and the app loads it at sign-in and after each finished quiz. A quiz closed midway does not count, nor does a quiz finished while offline. Guests have no progress: every word stays new for them.
 
 ### Mastery
 - `new` → never seen
@@ -115,9 +117,9 @@ Articles come from `vocabio-backend`, which copies them from an external site: t
 | Feature | Where |
 |---|---|
 | Native Google Sign-In | `lib/auth.ts` → expo-auth-session (PKCE) + dev build |
-| Progress sync | `store/progressStore.ts` → Supabase for signed-in users |
+| Offline quizzes | `hooks/useQuizSession.ts` → queue finished sessions that could not be sent |
 | Spaced repetition | `features/quiz/quizEngine.ts` → SM-2 algorithm |
 | Level filter | `quizEngine.ts` → filter on `word.level` |
-| Streaks | `store/progressStore.ts` → `currentStreak` field |
+| Streaks | `vocabio-backend` + `store/progressStore.ts` → `currentStreak` field |
 | Dark mode | `constants/theme.ts` → `DarkColors` + `useTheme` hook |
 | Pronunciation | `features/audio/` → expo-speech |
