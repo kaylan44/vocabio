@@ -68,6 +68,10 @@ export default function HomeScreen() {
     router.push('/vocab');
   };
 
+  const handleOpenArticles = () => {
+    router.push('/articles' as never);
+  };
+
   const handleMessagesPress = () => {
     router.push('/messages' as never);
   };
@@ -100,6 +104,19 @@ export default function HomeScreen() {
               <ModeCard mode="es-fr" onPress={handleModeSelect} large={isWide} />
             </View>
           </View>
+
+          {/* Articles — signed-in users only: the backend routes need a JWT */}
+          {isAuthenticated ? (
+            <View style={styles.vocabSection}>
+              <Text style={styles.sectionTitle}>Lire en espagnol</Text>
+              <Button
+                label="Lire un article"
+                variant="secondary"
+                icon="newspaper-outline"
+                onPress={handleOpenArticles}
+              />
+            </View>
+          ) : null}
 
           {/* Vocabulary access */}
           <View style={styles.vocabSection}>

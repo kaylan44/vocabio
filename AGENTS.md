@@ -22,6 +22,7 @@
 - Supabase Auth (Google SSO — web only for now, guest mode available)
 - Messaging: REST + Socket.io to `vocabio-backend` (Express, hosted on Railway)
 - Quiz statistics: finished quizzes sent to `vocabio-backend` (REST), stats shown on the account screen
+- Articles: easy Spanish news with audio, served by `vocabio-backend` (REST) — signed-in users only, audio on web only for now
 - Tests: Jest + jest-expo + React Native Testing Library
 
 ---
@@ -41,6 +42,8 @@
 | @supabase/supabase-js | ^2.x |
 | socket.io-client | ^4.8.x |
 | expo-crypto | ~55.0.x |
+| expo-audio | ~55.0.x |
+| expo-asset | ~55.0.x (peer dependency of expo-audio, must be a direct dependency) |
 
 ---
 
@@ -56,6 +59,10 @@ vocabio2/
 │   ├── result.tsx              Result — final score, replay
 │   ├── vocab.tsx               Vocabulary list with per-word progress
 │   ├── account.tsx             User profile, quiz statistics, sign out
+│   ├── articles/
+│   │   ├── _layout.tsx         Auth guard — redirects guests to /login
+│   │   ├── index.tsx           Article list with level filter and "load more"
+│   │   └── [id].tsx            Article reader: text, tap-to-translate, audio player at the bottom
 │   └── messages/
 │       ├── _layout.tsx         Auth guard — redirects guests to /login
 │       ├── index.tsx           Conversation list
@@ -83,6 +90,13 @@ vocabio2/
 │   │   └── ModeCard.tsx        FR→ES or ES→FR mode tile (two side by side, one tint per mode)
 │   ├── account/
 │   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
+│   ├── articles/
+│   │   ├── ArticleRow.tsx      List card: level, date, title, excerpt, listening time
+│   │   ├── LevelBadge.tsx      Level pill (easy / intermediate), one tint per level
+│   │   ├── LevelFilter.tsx     Level pills above the list (all / easy / intermediate)
+│   │   ├── ArticleBody.tsx     Article text; glossed phrases open their translation on tap
+│   │   ├── ArticleAudio.tsx    "Listen" card: download states, then the expo-audio player
+│   │   └── AudioPlayerView.tsx Player controls only (rewind, play / pause, progress, times)
 │   └── messaging/
 │       ├── ConversationRow.tsx Conversation list row
 │       ├── MessageBubble.tsx   Message bubble
@@ -92,6 +106,9 @@ vocabio2/
 │
 ├── features/                   Pure logic — no UI, no store
 │   ├── quiz/quizEngine.ts      Weighted selection, distractors, session building, backend payload
+│   ├── articles/
+│   │   ├── articleLogic.ts     Page merge, gloss toggle, playback progress and seek maths
+│   │   └── format.ts           Level and source labels, durations, dates
 │   └── messaging/
 │       ├── messagingLogic.ts   Merge / dedupe / sort messages
 │       └── format.ts           Date formatting
@@ -105,6 +122,9 @@ vocabio2/
 ├── hooks/                      Screens' entry points to the stores
 │   ├── useQuizSession.ts       Quiz — single entry point for the quiz/vocab screens
 │   ├── useQuizStats.ts         Quiz statistics from the backend (reloaded on screen focus)
+│   ├── useArticles.ts          Article list: level filter, pagination
+│   ├── useArticle.ts           One article with its text
+│   ├── useArticleAudio.ts      Article audio, downloaded on demand as a blob: URL (web only)
 │   ├── useAuth.ts              Auth
 │   ├── useMessagingConnection.ts  Socket lifecycle (mounted in the root _layout)
 │   ├── useConversations.ts     Conversation list
@@ -127,14 +147,14 @@ vocabio2/
 │
 ├── constants/
 │   ├── theme.ts                Design system — colors, typography, spacing, sizes, shadows
-│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG, MASCOT_CONFIG
+│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG, MASCOT_CONFIG, ARTICLES_CONFIG
 │
 ├── assets/
 │   ├── flags/                  FR / ES flags
 │   └── mascot/                 Mascot sprites (transparent PNG) — run, hug, cool, happy
 │
 ├── __tests__/                  Jest tests (logic, stores, hooks, components)
-└── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets, expo-crypto…)
+└── __mocks__/                  Jest mocks (Supabase, AsyncStorage, Reanimated, worklets, expo-crypto, expo-audio…)
 ```
 
 ---
@@ -169,8 +189,9 @@ type TileState = 'idle' | 'selected-correct' | 'selected-wrong' | 'revealed-corr
 type MasteryLevel = 'new' | 'seen' | 'mastered';
 ```
 
-Auth, messaging and quiz statistics types (`AuthUser`, `AuthStatus`, `ChatUser`, `Conversation`,
-`Message`, `QuizSessionPayload`, `QuizStats`…): see `types/index.ts`.
+Auth, messaging, quiz statistics and article types (`AuthUser`, `AuthStatus`, `ChatUser`,
+`Conversation`, `Message`, `QuizSessionPayload`, `QuizStats`, `ArticleSummary`, `Article`,
+`ArticleBlock`…): see `types/index.ts`.
 
 ---
 
@@ -238,6 +259,39 @@ Rules:
 
 ---
 
+## Articles
+
+Backend: `vocabio-backend`, same REST client and JWT as the rest (`articlesApi` in `services/api.ts`).
+The backend copies short news articles in easy Spanish from an external site; the app only reads them.
+
+- `GET /articles?level=&offset=&limit=` — list, read by `useArticles`.
+- `GET /articles/:id` — one article with its text, read by `useArticle`.
+- `GET /articles/:id/audio` — the whole MP3, read by `useArticleAudio`.
+
+Rules:
+- Signed-in users only. `app/articles/_layout.tsx` redirects guests to `/login`, and the Home
+  section is hidden for them.
+- No store: like the quiz statistics, the three hooks keep local state. Nothing is cached
+  between two visits.
+- The list is loaded on mount and when the level changes, **not** on every focus: coming back
+  from an article keeps the pages already loaded. "Load more" asks from offset = number of
+  articles shown, and `mergeArticles` drops duplicates.
+- The text is `ArticleBlock[]`: paragraphs made of segments. It is plain text, never HTML:
+  render it with `Text`, never with an HTML renderer.
+- A segment with a `gloss` is a phrase explained by the source, **in English**. `ArticleBody`
+  underlines it; a tap opens the translation under the paragraph, one at a time.
+- Audio is downloaded only on the first press on play, never when the article opens. The
+  route needs the JWT, so the file is fetched by the API client as a `Blob` and handed to
+  `expo-audio` as a `blob:` URL, revoked when the screen closes. An audio element pointed at
+  the backend URL would not work: it cannot send the `Authorization` header.
+- Audio is **web only** for now (`isArticleAudioSupported`). On native the card says so; the
+  text is readable everywhere.
+- No image: the backend sends none.
+- The original article is credited at the bottom of the reader (link to `article.url`).
+- Page size and player settings: `ARTICLES_CONFIG` (`constants/config.ts`).
+
+---
+
 ## Authentication
 
 - `authStore.init()` restores the Supabase session, then subscribes to `onAuthStateChange`.
@@ -281,14 +335,17 @@ Colors.textPrimary      #1A1D2E
 Colors.textSecondary    #6B7280
 Colors.textTertiary     #9CA3AF
 Colors.accent           #D0801C — warm orange, ES→FR mode tile (accentLight for its background)
+Colors.successDark / accentDark    text on successLight / accentLight (article level pills)
 
 Spacing.xs / sm / md / lg / xl / xxl   4 / 8 / 16 / 24 / 32 / 48
 Radius.sm / md / lg / xl / full        8 / 12 / 16 / 24 / 999
 Typography.sizes.xs -> display          11 -> 36
 Typography.weights.regular -> extrabold '400' -> '800'
+Typography.lineHeights.body / reading / title   22 / 30 / 34 — running text, article text, article title
 Shadow.* · AvatarSize.* · ControlSize.*  shadows, avatars, icons, flags, max widths…
 MascotSize.*                             mascot sprite heights and motion distances
-Layout.tabletBreakpoint / contentMaxWidth  768 / 720 — responsive breakpoint and centred content column (Home)
+Layout.tabletBreakpoint / contentMaxWidth  768 / 720 — responsive breakpoint and centred content column (Home, article list)
+Layout.readingMaxWidth                     640 — narrower column of the article reader
 ```
 
 ---
@@ -349,6 +406,8 @@ Never renumber an existing ID: persisted progress refers to it.
 |---|---|---|
 | Dark mode | constants/theme.ts | Add DarkColors, useTheme() hook |
 | Sounds / pronunciation | features/audio/ | expo-speech (TTS) or expo-audio |
+| Article audio on native | hooks/useArticleAudio.ts | Download to the cache directory (expo-file-system), then play the local file |
+| Article glosses in French | vocabio-backend | The source only provides English explanations |
 | Streaks | store/progressStore.ts | Add currentStreak, bestStreak to UserProgress |
 | Spaced repetition (SM-2) | features/quiz/quizEngine.ts | Replace the weight system with the SM-2 algorithm |
 | Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |

@@ -193,3 +193,50 @@ export interface ChatThread {
   hasMore: boolean;
   loadingOlder: boolean;
 }
+
+// ─── Article types ────────────────────────────────────────────────────────────
+// Shapes mirror the vocabio-backend API (/articles). Dates are ISO strings.
+
+export type ArticleLevel = 'easy' | 'intermediate';
+
+// 'all' only exists in the app: it means "no level filter" on the list screen.
+export type ArticleLevelFilter = ArticleLevel | 'all';
+
+// A piece of a paragraph. `gloss` is the source's explanation of the phrase, in English.
+export interface ArticleSegment {
+  text: string;
+  gloss?: string;
+}
+
+export interface ArticleBlock {
+  type: 'paragraph';
+  segments: ArticleSegment[];
+}
+
+export interface ArticleSummary {
+  id: string;
+  source: string;
+  lang: string;
+  level: ArticleLevel | null;
+  title: string;
+  excerpt: string;
+  url: string;                      // original article, shown as attribution
+  publishedAt: string;
+  audioDurationSec: number | null;
+  hasAudio: boolean;                // false: the audio route answers 404
+}
+
+export interface Article extends ArticleSummary {
+  content: ArticleBlock[];          // plain text, never HTML
+}
+
+export interface ArticlesPage {
+  articles: ArticleSummary[];
+  pagination: { offset: number; limit: number; count: number };
+}
+
+// Position of a glossed phrase inside an article: paragraph index, then segment index.
+export interface GlossPosition {
+  block: number;
+  segment: number;
+}

@@ -13,10 +13,12 @@ export const Colors = {
   // Accent — warm orange, second quiz mode on Home
   accent: '#D0801C',
   accentLight: '#FFF4E0',
+  accentDark: '#9A5B0E',     // text on accentLight (small labels need the contrast)
 
   // Semantic
   success: '#4DB87A',
   successLight: '#E8F8EF',
+  successDark: '#237A4B',    // text on successLight
   error: '#F26B5E',
   errorLight: '#FEF0EE',
 
@@ -58,6 +60,13 @@ export const Typography = {
     display: 36,
     // Text inputs must be >= 16px, otherwise iOS Safari zooms the page on focus.
     input: 16,
+  },
+
+  // Line heights for running text. Titles and labels use the platform default.
+  lineHeights: {
+    body: 22,
+    reading: 30,   // article text: generous, it is read slowly and tapped word by word
+    title: 34,
   },
 
   weights: {
@@ -155,9 +164,14 @@ export const ControlSize = {
   badgeMin: 18,
   inputMaxHeight: 120,  // multiline chat input stops growing past ~5 lines
   bubbleMaxWidth: '78%',
+  playButton: 56,       // main button of the audio player
+  playIcon: 28,
+  progressTrack: 6,     // height of the audio progress bar
+  progressHitSlop: 12,  // extra touch area above and below the bar
 } as const;
 
 export const Layout = {
   tabletBreakpoint: 768,  // from this window width up, screens use their roomier layout
   contentMaxWidth: 720,   // content column is centred and stops growing past this width
+  readingMaxWidth: 640,   // article text column: about 70 characters per line
 } as const;
