@@ -12,5 +12,6 @@ module.exports = {
     '^@supabase/supabase-js$': '<rootDir>/__mocks__/@supabase/supabase-js.ts',
     '^react-native-url-polyfill/auto$': '<rootDir>/__mocks__/react-native-url-polyfill/auto.ts',
     '^expo-crypto$': '<rootDir>/__mocks__/expo-crypto.ts',
+    '^expo-audio$': '<rootDir>/__mocks__/expo-audio.ts',
   },
 };
