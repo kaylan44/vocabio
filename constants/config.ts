@@ -31,3 +31,11 @@ export const MASCOT_CONFIG = {
   resultDelayMs: 600,   // Result: wait for the card entrance before popping up
   resultRiseMs: 400,    // Result: head is up, start the wiggle
 } as const;
+
+// ─── Articles ─────────────────────────────────────────────────────────────────
+
+export const ARTICLES_CONFIG = {
+  pageSize: 20,         // articles per request (the backend accepts up to 50)
+  rewindSeconds: 10,    // jump of the "back" button of the audio player
+  excerptLines: 3,      // lines of excerpt shown on a list card
+} as const;

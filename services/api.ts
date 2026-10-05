@@ -2,8 +2,12 @@
 // All writes go through REST (not socket events) so every action gets a status code
 // and still works while the socket is reconnecting.
 
+import { levelParam } from '../features/articles/articleLogic';
 import { supabase } from '../lib/supabase';
 import type {
+  Article,
+  ArticleLevelFilter,
+  ArticlesPage,
   ChatUser,
   Conversation,
   CreateConversationResponse,
@@ -33,7 +37,8 @@ export async function getAccessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+// Shared by the JSON and binary variants below: adds the token, turns a non-2xx into an ApiError.
+async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const token = await getAccessToken();
   if (!token) throw new ApiError(401, 'Non authentifié');
 
@@ -50,7 +55,18 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const body = await res.json().catch(() => null);
     throw new ApiError(res.status, body?.error ?? `Erreur ${res.status}`);
   }
+  return res;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await send(path, init);
   return res.json() as Promise<T>;
+}
+
+// For files: the body is kept as bytes instead of being parsed as JSON.
+async function requestBlob(path: string): Promise<Blob> {
+  const res = await send(path);
+  return res.blob();
 }
 
 export const messagingApi = {
@@ -93,4 +109,15 @@ export const quizApi = {
     }),
 
   getStats: () => request<QuizStats>('/quiz-sessions/stats'),
+};
+
+export const articlesApi = {
+  list: (level: ArticleLevelFilter, offset: number, limit: number) =>
+    request<ArticlesPage>(`/articles?offset=${offset}&limit=${limit}${levelParam(level)}`),
+
+  get: (articleId: string) => request<Article>(`/articles/${encodeURIComponent(articleId)}`),
+
+  // The whole MP3 (about 2 MB). Fetched like any other call so it carries the JWT:
+  // an audio element pointed at this URL could not send the Authorization header.
+  getAudio: (articleId: string) => requestBlob(`/articles/${encodeURIComponent(articleId)}/audio`),
 };
