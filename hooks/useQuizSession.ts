@@ -9,8 +9,10 @@ import { QuizMode } from '../types';
 
 /**
  * Central hook for the quiz flow.
- * Coordinates: quizStore (session state) + progressStore (persistence) + navigation,
- * and sends finished sessions to the backend for signed-in users.
+ * Coordinates: quizStore (session state) + progressStore (per-word progress) + navigation.
+ * A finished session of a signed-in user is sent to the backend, which derives both the
+ * statistics and the per-word progress from it; the progress is then reloaded.
+ * Nothing is sent for an unfinished quiz, nor for a guest.
  */
 export function useQuizSession() {
   const router = useRouter();
@@ -25,8 +27,27 @@ export function useQuizSession() {
     resetSession,
   } = useQuizStore();
 
-  const { getModeProgressMap, recordAnswer, getWordModeProgress, getWordCombinedProgress } = useProgressStore();
+  const {
+    words,
+    getModeProgressMap,
+    loadProgress,
+    getWordModeProgress: readWordModeProgress,
+    getWordCombinedProgress: readWordCombinedProgress,
+  } = useProgressStore();
   const isAuthenticated = useAuthStore(s => s.status === 'authenticated');
+
+  // ─── Progress readers ────────────────────────────────────────────────────────
+  // The store getters never change identity. These wrappers do, each time the progress
+  // changes (it arrives from the network, after the first render), so a list whose
+  // renderItem depends on them re-renders its rows.
+  const getWordModeProgress = useCallback(
+    (wordId: string, mode: QuizMode) => readWordModeProgress(wordId, mode),
+    [readWordModeProgress, words],
+  );
+  const getWordCombinedProgress = useCallback(
+    (wordId: string) => readWordCombinedProgress(wordId),
+    [readWordCombinedProgress, words],
+  );
 
   // ─── Start a new session ─────────────────────────────────────────────────────
   const start = useCallback((mode: QuizMode) => {
@@ -38,13 +59,9 @@ export function useQuizSession() {
   // ─── Handle answer selection ─────────────────────────────────────────────────
   const selectAnswer = useCallback((answer: string) => {
     if (!session || hasAnswered) return;
-    const question = session.questions[session.currentIndex];
-    const isCorrect = answer === question.correctAnswer;
-
+    // Only the session changes here: progress is recorded when the quiz is finished.
     storeSelectAnswer(answer);
-    // Record to progress store (async persist handled internally)
-    recordAnswer(question.wordId, session.mode, isCorrect);
-  }, [session, hasAnswered, storeSelectAnswer, recordAnswer]);
+  }, [session, hasAnswered, storeSelectAnswer]);
 
   // ─── Advance to next question or go to results ───────────────────────────────
   const nextQuestion = useCallback(() => {
@@ -56,14 +73,17 @@ export function useQuizSession() {
       const payload = isAuthenticated ? buildSessionPayload(session) : null;
       if (payload) {
         // Fire and forget — a network failure must not block the result screen.
-        quizApi.saveSession(payload).catch(err => console.warn('Quiz session not saved', err));
+        // Once saved, reload the progress: the backend recomputes it from this quiz.
+        quizApi.saveSession(payload)
+          .then(() => loadProgress())
+          .catch(err => console.warn('Quiz session not saved', err));
       }
       // Navigate to result — session data stays in store until reset
       router.push('/result');
     } else {
       storeNextQuestion();
     }
-  }, [session, isAuthenticated, storeNextQuestion, router]);
+  }, [session, isAuthenticated, loadProgress, storeNextQuestion, router]);
 
   // ─── Replay same mode ────────────────────────────────────────────────────────
   const replay = useCallback(() => {

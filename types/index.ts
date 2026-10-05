@@ -57,11 +57,15 @@ export interface WordModeProgress {
   lastSeen: number;  // timestamp
 }
 
-export interface UserProgress {
-  words: Record<string, WordProgress>;
-  totalSessions: number;
+// Shape mirrors the vocabio-backend API (/quiz-sessions/word-progress): one row per word
+// and per mode. The backend sends no mastery level, it is derived from the counters.
+export interface WordProgressRow {
+  wordId: string;
+  mode: QuizMode;
+  correctStreak: number;
+  totalSeen: number;
   totalCorrect: number;
-  // Future: streaks, xp, achievements
+  lastSeenAt: string;  // ISO date
 }
 
 // ─── Result types ─────────────────────────────────────────────────────────────

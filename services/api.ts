@@ -16,6 +16,7 @@ import type {
   QuizSessionPayload,
   QuizStats,
   SavedQuizSession,
+  WordProgressRow,
 } from '../types';
 
 export const API_URL =
@@ -109,6 +110,9 @@ export const quizApi = {
     }),
 
   getStats: () => request<QuizStats>('/quiz-sessions/stats'),
+
+  // Computed by the backend from the finished quizzes saved with saveSession.
+  getWordProgress: () => request<WordProgressRow[]>('/quiz-sessions/word-progress'),
 };
 
 export const articlesApi = {

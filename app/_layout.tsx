@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
-import { useProgressStore } from '../store/progressStore';
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/theme';
 import { useMessagingConnection } from '../hooks/useMessagingConnection';
+import { useProgressSync } from '../hooks/useProgressSync';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,12 +39,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   useMessagingConnection();
-  const loadProgress = useProgressStore(s => s.loadProgress);
+  useProgressSync();
   const init = useAuthStore(s => s.init);
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    loadProgress();
     init().then(cleanup => {
       cleanupRef.current = cleanup;
     });

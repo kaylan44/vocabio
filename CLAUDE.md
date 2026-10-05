@@ -60,6 +60,7 @@ Recommended order of changes, to stay consistent with the project's data flow:
 
 ## Never do without asking for confirmation
 
-- Change the AsyncStorage persistence structure (key `@vocabio_progress_v1`) — it would wipe existing user progress.
-- Change the word ID format — it would break references in `progressStore`.
+- Store app data on the device (AsyncStorage / localStorage) — progress lives on `vocabio-backend` only; the device keeps nothing but the guest flag and the Supabase session.
+- Change the shape of the `/quiz-sessions` payloads — the backend must be changed and deployed first.
+- Change the word ID format — it would break the progress and quiz results stored on the backend.
 - Rename or move `hooks/useQuizSession.ts` — it is the single entry point used by every screen.
