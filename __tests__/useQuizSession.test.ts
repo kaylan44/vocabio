@@ -13,10 +13,11 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('../services/api', () => ({
-  quizApi: { saveSession: jest.fn() },
+  quizApi: { saveSession: jest.fn(), getWordProgress: jest.fn() },
 }));
 
 const saveSession = quizApi.saveSession as jest.MockedFunction<typeof quizApi.saveSession>;
+const getWordProgress = quizApi.getWordProgress as jest.MockedFunction<typeof quizApi.getWordProgress>;
 
 /** Plays a whole quiz, answering right or wrong as listed, then leaves the last question. */
 function playQuiz(result: { current: ReturnType<typeof useQuizSession> }, outcomes: boolean[]) {
@@ -34,9 +35,11 @@ describe('useQuizSession', () => {
     mockReplace.mockClear();
     saveSession.mockReset();
     saveSession.mockResolvedValue({ id: 'x', mode: 'fr-es', score: 0, total: 10, createdAt: '' });
+    getWordProgress.mockReset();
+    getWordProgress.mockResolvedValue([]);
     useAuthStore.setState({ status: 'guest', user: null });
     useQuizStore.getState().resetSession();
-    useProgressStore.getState().resetProgress();
+    useProgressStore.getState().clearProgress();
   });
 
   it('start() creates a session and navigates to /quiz', () => {
@@ -54,13 +57,61 @@ describe('useQuizSession', () => {
     expect(result.current.score).toBe(1);
   });
 
-  it('selectAnswer() records answer in progressStore', () => {
-    const { result } = renderHook(() => useQuizSession());
-    act(() => { result.current.start('fr-es'); });
-    const q = result.current.currentQuestion!;
-    act(() => { result.current.selectAnswer(q.correctAnswer); });
-    const p = useProgressStore.getState().getWordModeProgress(q.wordId, 'fr-es');
-    expect(p?.totalSeen).toBe(1);
+  describe('per-word progress', () => {
+    const outcomes = [true, false, true, true, true, false, true, true, true, true];
+
+    it('answering does not change the progress nor call the backend', () => {
+      useAuthStore.setState({ status: 'authenticated' });
+      const { result } = renderHook(() => useQuizSession());
+      act(() => { result.current.start('fr-es'); });
+      playQuiz(result, outcomes.slice(0, 9));
+
+      expect(useProgressStore.getState().words).toEqual({});
+      expect(saveSession).not.toHaveBeenCalled();
+      expect(getWordProgress).not.toHaveBeenCalled();
+    });
+
+    it('reloads the progress from the backend once the finished quiz is saved', async () => {
+      useAuthStore.setState({ status: 'authenticated' });
+      const { result } = renderHook(() => useQuizSession());
+      act(() => { result.current.start('fr-es'); });
+      const wordId = result.current.currentQuestion!.wordId;
+      getWordProgress.mockResolvedValue([
+        { wordId, mode: 'fr-es', correctStreak: 1, totalSeen: 1, totalCorrect: 1, lastSeenAt: '2026-10-05T10:00:00.000Z' },
+      ]);
+      const before = result.current.getWordCombinedProgress;
+
+      playQuiz(result, outcomes);
+      await act(async () => {});
+
+      expect(getWordProgress).toHaveBeenCalledTimes(1);
+      expect(result.current.getWordCombinedProgress(wordId).totalSeen).toBe(1);
+      // New identity, so a list rendering through it refreshes its rows
+      expect(result.current.getWordCombinedProgress).not.toBe(before);
+    });
+
+    it('does not reload the progress when saving the quiz fails', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      saveSession.mockRejectedValue(new Error('offline'));
+      useAuthStore.setState({ status: 'authenticated' });
+      const { result } = renderHook(() => useQuizSession());
+      act(() => { result.current.start('fr-es'); });
+      playQuiz(result, outcomes);
+      await act(async () => {});
+
+      expect(getWordProgress).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('never loads nor records anything for a guest', async () => {
+      const { result } = renderHook(() => useQuizSession());
+      act(() => { result.current.start('fr-es'); });
+      playQuiz(result, outcomes);
+      await act(async () => {});
+
+      expect(getWordProgress).not.toHaveBeenCalled();
+      expect(useProgressStore.getState().words).toEqual({});
+    });
   });
 
   it('nextQuestion() navigates to /result after last question', () => {
