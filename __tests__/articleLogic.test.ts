@@ -112,9 +112,18 @@ describe('articleLogic', () => {
       expect(seekTarget(999, 300, 200)).toBe(200);
     });
 
-    it('is 0 before the bar is measured or the duration is known', () => {
-      expect(seekTarget(150, 0, 200)).toBe(0);
-      expect(seekTarget(150, 300, 0)).toBe(0);
+    it('is null before the bar is measured or the duration is known', () => {
+      expect(seekTarget(150, 0, 200)).toBeNull();
+      expect(seekTarget(150, 300, 0)).toBeNull();
+      expect(seekTarget(150, 300, NaN)).toBeNull();
+    });
+
+    it('is null, never NaN, when the press has no usable coordinate', () => {
+      // A web press event has no locationX: undefined ended up here and the NaN that
+      // came out made the audio element throw.
+      expect(seekTarget(undefined as unknown as number, 300, 200)).toBeNull();
+      expect(seekTarget(NaN, 300, 200)).toBeNull();
+      expect(seekTarget(150, NaN, 200)).toBeNull();
     });
   });
 });

@@ -37,8 +37,13 @@ export function playbackProgress(currentTime: number, duration: number): number 
   return Math.min(1, Math.max(0, currentTime / duration));
 }
 
-/** Playback time for a tap at `x` on a track `width` wide. */
-export function seekTarget(x: number, width: number, duration: number): number {
-  if (width <= 0 || !Number.isFinite(duration) || duration <= 0) return 0;
+/**
+ * Playback time for a tap at `x` on a track `width` wide, or null when it cannot be
+ * computed (bar not measured, unknown duration, no usable coordinate). The caller must
+ * not seek on null: a media element throws when given a non-finite time.
+ */
+export function seekTarget(x: number, width: number, duration: number): number | null {
+  if (!Number.isFinite(x) || !Number.isFinite(width) || width <= 0) return null;
+  if (!Number.isFinite(duration) || duration <= 0) return null;
   return Math.min(duration, Math.max(0, (x / width) * duration));
 }

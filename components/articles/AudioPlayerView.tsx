@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, GestureResponderEvent, LayoutChangeEvent, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef } from 'react';
+import { ActivityIndicator, GestureResponderEvent, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ARTICLES_CONFIG } from '../../constants/config';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
@@ -31,12 +31,19 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   onSeek,
   onRewind,
 }) => {
-  const [trackWidth, setTrackWidth] = useState(0);
+  const trackRef = useRef<View>(null);
   const progress = playbackProgress(currentTime, duration);
 
-  const handleTrackLayout = (e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width);
+  // Where on the bar was the press? `locationX` is not reliable here: on web a press event
+  // does not carry it, and it would be relative to whichever child was hit. The page
+  // position of the press minus the page position of the bar works on every platform.
   const handleTrackPress = (e: GestureResponderEvent) => {
-    onSeek?.(seekTarget(e.nativeEvent.locationX, trackWidth, duration));
+    if (!onSeek) return;
+    const { pageX } = e.nativeEvent;
+    trackRef.current?.measure((_x, _y, width, _height, left) => {
+      const target = seekTarget(pageX - left, width, duration);
+      if (target !== null) onSeek(target);
+    });
   };
 
   return (
@@ -74,8 +81,8 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
 
       <View style={styles.timeline}>
         <Pressable
+          ref={trackRef}
           onPress={handleTrackPress}
-          onLayout={handleTrackLayout}
           disabled={!onSeek}
           hitSlop={ControlSize.progressHitSlop}
           accessibilityRole="adjustable"

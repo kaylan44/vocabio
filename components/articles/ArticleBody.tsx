@@ -86,9 +86,11 @@ const styles = StyleSheet.create({
     textDecorationStyle: 'dotted',
     textDecorationColor: Colors.primary,
   },
+  // No bold here: a wider phrase would re-wrap the paragraph under the reader's finger.
   glossOpen: {
     backgroundColor: Colors.primaryLight,
-    fontWeight: Typography.weights.semibold,
+    color: Colors.primary,
+    textDecorationStyle: 'solid',
   },
   card: {
     flexDirection: 'row',

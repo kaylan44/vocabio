@@ -41,13 +41,19 @@ function LoadedPlayer({ uri, fallbackDuration }: { uri: string; fallbackDuration
     }
   }, [player]);
 
+  // Single door to the player's position. A media element throws on a non-finite time,
+  // and the status can briefly report one while the file is still being decoded.
+  const seek = (seconds: number) => {
+    if (Number.isFinite(seconds)) player.seekTo(Math.max(0, seconds));
+  };
+
   const handleToggle = () => {
     if (status.playing) {
       player.pause();
       return;
     }
     // At the end of the track, "play" starts over instead of doing nothing.
-    if (duration > 0 && status.currentTime >= duration - END_MARGIN_SEC) player.seekTo(0);
+    if (duration > 0 && status.currentTime >= duration - END_MARGIN_SEC) seek(0);
     player.play();
   };
 
@@ -57,8 +63,8 @@ function LoadedPlayer({ uri, fallbackDuration }: { uri: string; fallbackDuration
       currentTime={status.currentTime}
       duration={duration}
       onToggle={handleToggle}
-      onSeek={seconds => player.seekTo(seconds)}
-      onRewind={() => player.seekTo(Math.max(0, status.currentTime - ARTICLES_CONFIG.rewindSeconds))}
+      onSeek={seek}
+      onRewind={() => seek(status.currentTime - ARTICLES_CONFIG.rewindSeconds)}
     />
   );
 }
