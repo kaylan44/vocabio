@@ -27,7 +27,7 @@ export default function ConversationsScreen() {
     if (status === 'error') {
       return (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>Impossible de charger vos conversations.</Text>
+          <Text style={styles.emptyText}>Impossible de charger tes conversations.</Text>
           <Button label="Réessayer" variant="secondary" onPress={refresh} />
         </View>
       );
@@ -35,7 +35,7 @@ export default function ConversationsScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyTitle}>Aucune conversation</Text>
-        <Text style={styles.emptyText}>Trouvez un autre apprenant et écrivez-lui en espagnol !</Text>
+        <Text style={styles.emptyText}>Trouve un autre apprenant et écris-lui en espagnol !</Text>
         <Button label="Nouvelle conversation" onPress={openSearch} />
       </View>
     );

@@ -161,6 +161,7 @@ export const ControlSize = {
   flagPairLargeWidth: 72,  // same pair with two `flag` flags, on tablet / web
   flagPairLargeHeight: 54,
   flagRing: 2,         // ring in the tile colour around the front flag
+  rowIllustration: 56, // illustration height on a Home link row, width follows its ratio
   badgeMin: 18,
   inputMaxHeight: 120,  // multiline chat input stops growing past ~5 lines
   bubbleMaxWidth: '78%',

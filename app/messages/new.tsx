@@ -25,7 +25,7 @@ export default function NewConversationScreen() {
 
   const renderEmpty = () => {
     if (status === 'loading') return <ActivityIndicator style={styles.hint} color={Colors.primary} />;
-    if (status === 'error') return <Text style={styles.hint}>Le chargement a échoué. Réessayez.</Text>;
+    if (status === 'error') return <Text style={styles.hint}>Le chargement a échoué. Réessaie.</Text>;
     if (query.trim()) return <Text style={styles.hint}>Aucun utilisateur trouvé.</Text>;
     return <Text style={styles.hint}>Aucun autre apprenant pour l'instant.</Text>;
   };
@@ -46,7 +46,7 @@ export default function NewConversationScreen() {
           accessibilityLabel="Rechercher un utilisateur"
         />
       </View>
-      {openError ? <Text style={styles.error}>Impossible d'ouvrir la conversation. Réessayez.</Text> : null}
+      {openError ? <Text style={styles.error}>Impossible d'ouvrir la conversation. Réessaie.</Text> : null}
       <FlatList
         data={results}
         keyExtractor={item => item.id}
