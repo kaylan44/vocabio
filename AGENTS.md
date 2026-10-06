@@ -88,7 +88,8 @@ vocabio2/
 │   │   └── ResultMascot.tsx    Happy mascot head popping up above the score on the result card
 │   ├── home/
 │   │   ├── HomeMascot.tsx      Animated mascot: runs in, idles, sunglasses on tap
-│   │   └── ModeCard.tsx        FR→ES or ES→FR mode tile (two side by side, one tint per mode)
+│   │   ├── ModeCard.tsx        FR→ES or ES→FR mode tile (two side by side, one tint per mode)
+│   │   └── HomeLinkRow.tsx     White row to Articles / Vocabulary (illustration, title, subtitle, chevron)
 │   ├── account/
 │   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
 │   ├── articles/
@@ -153,6 +154,7 @@ vocabio2/
 │
 ├── assets/
 │   ├── flags/                  FR / ES flags
+│   ├── illustrations/          Home link illustrations — article, vocab (SVG source + 3x transparent PNG, only the PNG is bundled)
 │   └── mascot/                 Mascot sprites (transparent PNG) — run, hug, cool, happy
 │
 ├── __tests__/                  Jest tests (logic, stores, hooks, components)
@@ -420,6 +422,7 @@ Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`
 - Pure logic (testable without React) goes in `features/`
 - Types: all in types/index.ts — no inline types in components except local prop interfaces
 - Word IDs: category prefix + 3 digits, continuous sequence with no gaps (see table below)
+- UI copy: French, always addressing the user with "tu" ("Choisis un mode", "Réessaie") — never "vous"
 
 ---
 
