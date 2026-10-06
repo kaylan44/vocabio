@@ -17,8 +17,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { HomeMascot } from '../components/home/HomeMascot';
+import { HomeLinkRow } from '../components/home/HomeLinkRow';
 import { ModeCard } from '../components/home/ModeCard';
-import { Button } from '../components/ui/Button';
 import { Colors, ControlSize, Layout, Radius, Spacing, Typography } from '../constants/theme';
 import { CounterBadge } from '../components/ui/CounterBadge';
 import { useAuth } from '../hooks/useAuth';
@@ -92,39 +92,35 @@ export default function HomeScreen() {
           overScrollMode="never"
         >
           <View style={styles.hero}>
-            <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
+            <Text style={styles.tagline}>Apprends l'espagnol, une session à la fois.</Text>
             <HomeMascot />
           </View>
 
           {/* Mode selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Choisissez un mode</Text>
+            <Text style={styles.sectionTitle}>Choisis un mode</Text>
             <View style={styles.cards}>
               <ModeCard mode="fr-es" onPress={handleModeSelect} large={isWide} />
               <ModeCard mode="es-fr" onPress={handleModeSelect} large={isWide} />
             </View>
           </View>
 
-          {/* Articles — signed-in users only: the backend routes need a JWT */}
-          {isAuthenticated ? (
-            <View style={styles.vocabSection}>
-              <Text style={styles.sectionTitle}>Lire en espagnol</Text>
-              <Button
-                label="Lire un article"
-                variant="secondary"
-                icon="newspaper-outline"
+          <View style={styles.links}>
+            {/* Articles — signed-in users only: the backend routes need a JWT */}
+            {isAuthenticated ? (
+              <HomeLinkRow
+                illustration="article"
+                title="Lire un article"
+                subtitle="Découvre des textes en espagnol"
                 onPress={handleOpenArticles}
               />
-            </View>
-          ) : null}
+            ) : null}
 
-          {/* Vocabulary access */}
-          <View style={styles.vocabSection}>
-            <Text style={styles.sectionTitle}>Parcourir le vocabulaire</Text>
-            <Button
-              label="Voir le vocabulaire"
-              variant="secondary"
-              icon="book-outline"
+            {/* Vocabulary access */}
+            <HomeLinkRow
+              illustration="vocab"
+              title="Voir le vocabulaire"
+              subtitle="Enrichis ton lexique"
               onPress={handleOpenVocab}
             />
           </View>
@@ -284,7 +280,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  vocabSection: {
-    gap: Spacing.sm,
+  links: {
+    gap: Spacing.md,
   },
 });

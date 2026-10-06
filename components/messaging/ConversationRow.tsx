@@ -17,7 +17,7 @@ export const ConversationRow: React.FC<ConversationRowProps> = React.memo(({ con
   const name = otherParticipant?.username ?? 'Utilisateur supprimé';
   const unread = unreadCount > 0;
   const preview = lastMessage
-    ? `${lastMessage.senderId === myUserId ? 'Vous : ' : ''}${lastMessage.content}`
+    ? `${lastMessage.senderId === myUserId ? 'Toi : ' : ''}${lastMessage.content}`
     : '';
 
   return (

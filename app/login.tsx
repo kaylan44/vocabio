@@ -71,7 +71,7 @@ export default function LoginScreen() {
           <Text style={styles.title}>
             <Text style={styles.titleAccent}>V</Text>ocabio
           </Text>
-          <Text style={styles.tagline}>Apprenez l'espagnol, une session à la fois.</Text>
+          <Text style={styles.tagline}>Apprends l'espagnol, une session à la fois.</Text>
         </View>
 
         {/* Auth actions */}

@@ -34,7 +34,7 @@ export default function ArticleScreen() {
       return (
         <View style={styles.centered}>
           <Text style={styles.stateTitle}>Impossible de charger cet article</Text>
-          <Text style={styles.stateText}>Il a peut-être été retiré. Vous pouvez réessayer ou revenir à la liste.</Text>
+          <Text style={styles.stateText}>Il a peut-être été retiré. Tu peux réessayer ou revenir à la liste.</Text>
           <Button label="Réessayer" variant="secondary" icon="refresh" onPress={refresh} />
         </View>
       );
@@ -63,7 +63,7 @@ export default function ArticleScreen() {
         {hasGlosses ? (
           <View style={styles.hint}>
             <Ionicons name="bulb-outline" size={ControlSize.buttonIcon} color={Colors.primaryDark} />
-            <Text style={styles.hintText}>Touchez une expression soulignée pour voir sa traduction.</Text>
+            <Text style={styles.hintText}>Touche une expression soulignée pour voir sa traduction.</Text>
           </View>
         ) : null}
 

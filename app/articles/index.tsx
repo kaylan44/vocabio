@@ -33,7 +33,7 @@ export default function ArticlesScreen() {
       return (
         <View style={styles.centered}>
           <Text style={styles.emptyTitle}>Impossible de charger les articles</Text>
-          <Text style={styles.emptyText}>Vérifiez votre connexion, puis réessayez.</Text>
+          <Text style={styles.emptyText}>Vérifie ta connexion, puis réessaie.</Text>
           <Button label="Réessayer" variant="secondary" icon="refresh" onPress={refresh} />
         </View>
       );
@@ -46,8 +46,8 @@ export default function ArticlesScreen() {
         <Text style={styles.emptyTitle}>Aucun article pour le moment</Text>
         <Text style={styles.emptyText}>
           {level === 'all'
-            ? 'De nouveaux articles arrivent chaque jour. Revenez un peu plus tard.'
-            : 'Aucun article à ce niveau. Essayez un autre filtre.'}
+            ? 'De nouveaux articles arrivent chaque jour. Reviens un peu plus tard.'
+            : 'Aucun article à ce niveau. Essaie un autre filtre.'}
         </Text>
       </View>
     );

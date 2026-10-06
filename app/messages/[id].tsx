@@ -98,7 +98,7 @@ export default function ChatScreen() {
         ListEmptyComponent={
           <View style={styles.emptyChat}>
             <Text style={styles.emptyText}>
-              Dites bonjour à {other?.username ?? 'votre correspondant'} 👋
+              Dis bonjour à {other?.username ?? 'ton correspondant'} 👋
             </Text>
           </View>
         }

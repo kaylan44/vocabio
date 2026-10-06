@@ -99,7 +99,7 @@ export default function VocabularyScreen() {
           <Text style={styles.title}>
             <Text style={styles.titleV}>V</Text>ocabulaire
           </Text>
-          <Text style={styles.subtitle}>Consultez les mots par catégorie.</Text>
+          <Text style={styles.subtitle}>Consulte les mots par catégorie.</Text>
         </View>
       </View>
 
