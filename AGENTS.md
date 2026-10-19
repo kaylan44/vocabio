@@ -459,7 +459,7 @@ Never renumber an existing ID: the progress and quiz results stored on the backe
 | Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
 | Native Google Sign-In | lib/auth.ts | expo-auth-session (PKCE) + dev build |
 | Offline quizzes | hooks/useQuizSession.ts | Queue finished sessions that could not be sent; safe to retry, the session id is an idempotency key |
-| More languages | types/index.ts + data/ | Add a language field to VocabWord |
+| More languages | see PLAN.md (Indonesian, planned) | One folder per language under data/, language given by the folder and the id prefix, no language field on VocabWord |
 
 ---
 
