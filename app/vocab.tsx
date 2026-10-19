@@ -75,7 +75,7 @@ export default function VocabularyScreen() {
           {combined.isMastered && <Text style={styles.medalIcon}>🏅</Text>}
         </View>
         <View style={styles.wordCellRight}>
-          <Text style={styles.wordSpanish}>{item.spanish}</Text>
+          <Text style={styles.wordTarget}>{item.target}</Text>
         </View>
       </View>
     );
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.semibold,
     color: Colors.textPrimary,
   },
-  wordSpanish: {
+  wordTarget: {
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.medium,
     color: Colors.primary,

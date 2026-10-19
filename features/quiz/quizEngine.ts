@@ -73,14 +73,14 @@ function buildDistractors(
   const shuffled = [...sameCategory].sort(() => Math.random() - 0.5);
   const picked = shuffled.slice(0, 3);
 
-  return picked.map(w => (mode === 'fr-es' ? w.spanish : w.french));
+  return picked.map(w => (mode === 'fr-es' ? w.target : w.french));
 }
 
 // ─── Question builder ─────────────────────────────────────────────────────────
 
 function buildQuestion(word: VocabWord, mode: QuizMode): QuizQuestion {
-  const targetWord = mode === 'fr-es' ? word.french : word.spanish;
-  const correctAnswer = mode === 'fr-es' ? word.spanish : word.french;
+  const targetWord = mode === 'fr-es' ? word.french : word.target;
+  const correctAnswer = mode === 'fr-es' ? word.target : word.french;
 
   const distractors = buildDistractors(word, mode, []);
 

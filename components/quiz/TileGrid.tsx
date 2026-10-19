@@ -17,10 +17,10 @@ interface TileGridProps {
 function getWrongAnswerHint(option: string, mode: QuizMode): string | undefined {
   // option is a translation — find the word and return the reverse translation
   const word = mode === 'fr-es'
-    ? VOCABULARY.find(w => w.spanish === option)
+    ? VOCABULARY.find(w => w.target === option)
     : VOCABULARY.find(w => w.french === option);
   if (!word) return undefined;
-  return mode === 'fr-es' ? word.french : word.spanish;
+  return mode === 'fr-es' ? word.french : word.target;
 }
 
 export const TileGrid: React.FC<TileGridProps> = ({

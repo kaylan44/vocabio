@@ -78,20 +78,20 @@ describe('buildQuizSession', () => {
     expect(new Set(ids).size).toBe(10);
   });
 
-  it('fr-es mode: targetWord is french, correctAnswer is spanish', () => {
+  it('fr-es mode: targetWord is french, correctAnswer is the target word', () => {
     const session = buildQuizSession('fr-es', emptyProgress);
     for (const q of session.questions) {
       const word = VOCABULARY.find(w => w.id === q.wordId)!;
       expect(q.targetWord).toBe(word.french);
-      expect(q.correctAnswer).toBe(word.spanish);
+      expect(q.correctAnswer).toBe(word.target);
     }
   });
 
-  it('es-fr mode: targetWord is spanish, correctAnswer is french', () => {
+  it('es-fr mode: targetWord is the target word, correctAnswer is french', () => {
     const session = buildQuizSession('es-fr', emptyProgress);
     for (const q of session.questions) {
       const word = VOCABULARY.find(w => w.id === q.wordId)!;
-      expect(q.targetWord).toBe(word.spanish);
+      expect(q.targetWord).toBe(word.target);
       expect(q.correctAnswer).toBe(word.french);
     }
   });
