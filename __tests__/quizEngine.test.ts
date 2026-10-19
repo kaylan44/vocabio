@@ -5,7 +5,7 @@ import {
   getCurrentQuestion,
   selectWeightedWords,
 } from '../features/quiz/quizEngine';
-import { VOCABULARY } from '../data/vocabulary';
+import { VOCABULARY, getVocabulary, getWordById } from '../data/vocabulary';
 import { QuizSession, WordModeProgress } from '../types';
 
 const emptyProgress = {};
@@ -156,5 +156,45 @@ describe('buildSessionPayload', () => {
   it('returns null while a question is unanswered', () => {
     const answers = [...new Array(9).fill(true), null];
     expect(buildSessionPayload(answered(answers))).toBeNull();
+  });
+});
+
+describe('Indonesian modes', () => {
+  const idWords = getVocabulary('id');
+  const idFrench = new Set(idWords.map(w => w.french));
+  const idTargets = new Set(idWords.map(w => w.target));
+
+  it('fr-id draws the words and the distractors from the Indonesian vocabulary only', () => {
+    const session = buildQuizSession('fr-id', emptyProgress);
+    for (const q of session.questions) {
+      expect(q.wordId.startsWith('id-')).toBe(true);
+      const word = getWordById(q.wordId)!;
+      expect(q.targetWord).toBe(word.french);
+      expect(q.correctAnswer).toBe(word.target);
+      for (const option of q.options) expect(idTargets.has(option)).toBe(true);
+    }
+  });
+
+  it('id-fr shows the Indonesian word and offers French answers of Indonesian words', () => {
+    const session = buildQuizSession('id-fr', emptyProgress);
+    for (const q of session.questions) {
+      const word = getWordById(q.wordId)!;
+      expect(q.targetWord).toBe(word.target);
+      expect(q.correctAnswer).toBe(word.french);
+      for (const option of q.options) expect(idFrench.has(option)).toBe(true);
+    }
+  });
+
+  it('a Spanish mode never draws an Indonesian word', () => {
+    const session = buildQuizSession('es-fr', emptyProgress);
+    expect(session.questions.every(q => q.wordId.startsWith('es-'))).toBe(true);
+  });
+
+  it('keeps the Indonesian mode in the backend payload', () => {
+    const built = buildQuizSession('id-fr', emptyProgress);
+    const session: QuizSession = { id: 'sid', ...built, answers: built.answers.map(() => true) };
+    const payload = buildSessionPayload(session)!;
+    expect(payload.mode).toBe('id-fr');
+    expect(payload.answers.every(a => a.wordId.startsWith('id-'))).toBe(true);
   });
 });

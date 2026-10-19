@@ -5,7 +5,9 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
 import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { StatsCard } from '../components/account/StatsCard';
+import { LANGUAGES } from '../constants/languages';
 import { useAuth } from '../hooks/useAuth';
+import { useCurrentLanguage } from '../hooks/useLanguage';
 import { useQuizStats } from '../hooks/useQuizStats';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -79,11 +81,14 @@ function Avatar({ uri, name }: { uri: string | null; name: string | null }) {
 export default function AccountScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
-  const { stats, status: statsStatus, refresh: refreshStats } = useQuizStats();
+  // Statistics of the current language. After a direct load of /account no language was
+  // visited yet: every language together.
+  const { language, homeHref } = useCurrentLanguage();
+  const { stats, status: statsStatus, refresh: refreshStats } = useQuizStats(language ?? undefined);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/' as never);
+      router.replace(homeHref as never);
     }
   }, [isLoading, isAuthenticated]);
 
@@ -92,7 +97,7 @@ export default function AccountScreen() {
   // Direct load of /account (e.g. web refresh) has no history to go back to.
   const handleBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace('/' as never);
+    else router.replace(homeHref as never);
   };
 
   const formattedDate = user.createdAt
@@ -122,7 +127,12 @@ export default function AccountScreen() {
           <InfoRow label="Membre depuis" value={formattedDate} />
         </View>
 
-        <StatsCard stats={stats} status={statsStatus} onRetry={refreshStats} />
+        <StatsCard
+          stats={stats}
+          status={statsStatus}
+          onRetry={refreshStats}
+          languageLabel={language ? LANGUAGES[language].label : undefined}
+        />
 
         {/* Sign out */}
         <SignOutButton onPress={signOut} />

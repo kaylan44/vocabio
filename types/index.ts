@@ -1,9 +1,13 @@
 // ─── Core vocabulary types ───────────────────────────────────────────────────
 
 // Language being learnt. Also the folder of its words (data/es/) and their id prefix ('es-n001').
-export type Language = 'es';
+export type Language = 'es' | 'id';
 
-export type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun';
+// Flags shown in the app: French (the user's language) and every language being learnt.
+export type FlagCountry = 'fr' | Language;
+
+export type GrammarCategory =
+  | 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun' | 'number';
 
 export type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 
@@ -13,12 +17,13 @@ export interface VocabWord {
   target: string;    // Word in the language being learnt (language given by the id prefix)
   category: GrammarCategory;
   level: WordLevel;
+  oppositeId?: string;  // Adjectives: id of the opposite adjective, in the same language
   // Future: audio, example sentences, tags
 }
 
 // ─── Quiz types ───────────────────────────────────────────────────────────────
 
-export type QuizMode = 'fr-es' | 'es-fr';
+export type QuizMode = 'fr-es' | 'es-fr' | 'fr-id' | 'id-fr';
 
 export interface QuizQuestion {
   wordId: string;
@@ -47,9 +52,9 @@ export type MasteryLevel = 'new' | 'seen' | 'mastered';
 
 export interface WordProgress {
   wordId: string;
-  // Per-mode stats — FR→ES and ES→FR tracked independently
-  frEs: WordModeProgress;
-  esF: WordModeProgress;
+  // Per-mode stats, each mode tracked independently. A mode the word was never
+  // played in has no entry.
+  byMode: Partial<Record<QuizMode, WordModeProgress>>;
 }
 
 export interface WordModeProgress {

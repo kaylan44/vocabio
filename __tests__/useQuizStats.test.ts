@@ -84,3 +84,26 @@ describe('useQuizStats', () => {
     expect(result.current.stats).toEqual(newer);
   });
 });
+
+describe('useQuizStats with a language', () => {
+  beforeEach(() => {
+    getStats.mockReset();
+    getStats.mockResolvedValue(STATS);
+  });
+
+  it('asks the backend for the statistics of that language only', async () => {
+    renderHook(() => useQuizStats('id'));
+    await flush();
+    expect(getStats).toHaveBeenCalledWith('id');
+  });
+
+  it('reloads when the language changes', async () => {
+    const { rerender } = renderHook(({ lang }) => useQuizStats(lang), {
+      initialProps: { lang: 'es' as 'es' | 'id' },
+    });
+    await flush();
+    rerender({ lang: 'id' });
+    await flush();
+    expect(getStats).toHaveBeenLastCalledWith('id');
+  });
+});

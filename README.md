@@ -1,19 +1,20 @@
-# Vocabio 🇫🇷 ↔ 🇪🇸
+# Vocabio 🇫🇷 ↔ 🇪🇸 🇮🇩
 
-Mobile vocabulary quiz app for Spanish ↔ French, with user accounts and 1:1 messaging.
+Mobile vocabulary quiz app for French speakers learning Spanish or Indonesian, with user accounts and 1:1 messaging.
 Stack: React Native · Expo SDK 55 · TypeScript · Expo Router · Zustand · Reanimated · Supabase · Socket.io
 
 ---
 
 ## Features
 
-- **FR→ES / ES→FR quiz** — 10-question sessions with 4 choices, answer animations
+- **Two languages** — Spanish and Indonesian, picked on a language screen at each app start; a "Changer de langue" button on the home screen leads back to it
+- **Quiz in both directions** — FR→ES / ES→FR and FR→ID / ID→FR, 10-question sessions with 4 choices, answer animations
 - **Per-word, per-direction progress** — weighted selection that favours new words, "mastered" badge; saved to the account of signed-in users and found again on any device (guests have no progress)
-- **Vocabulary list** — 630 words (nouns, verbs, adjectives, adverbs, expressions, pronouns), levels A1 → B1
+- **Vocabulary list** — Spanish: 630 words (nouns, verbs, adjectives, adverbs, expressions, pronouns), levels A1 → B1. Indonesian: 224 A1 entries (nouns, family, durations and food, verbs, adjectives, time adverbs, numbers, questions, basic sentences, telling the time and ordering at a warung, pronouns)
 - **Authentication** — Google SSO through Supabase (web) or guest mode
 - **1:1 messaging** — real-time conversations, typing indicator, read receipts, optimistic sending
-- **Quiz statistics** — finished quizzes of signed-in users are stored on the backend; the account screen shows quizzes played and accuracy by direction, category and level, plus the most-missed words
-- **Articles in easy Spanish** — short news articles for learners, with a level filter; tap an underlined phrase to see its translation, and listen to the article read aloud (signed-in users; listening on web only for now)
+- **Quiz statistics** — finished quizzes of signed-in users are stored on the backend; the account screen shows, for the current language, quizzes played and accuracy by direction, category and level, plus the most-missed words
+- **Articles in easy Spanish** (from the Spanish home only) — short news articles for learners, with a level filter; tap an underlined phrase to see its translation, and listen to the article read aloud (signed-in users; listening on web only for now)
 
 ---
 
@@ -47,6 +48,8 @@ npx expo start          # then scan the QR code with Expo Go
 npx expo start --web    # web build (the only platform where Google Sign-In works for now)
 ```
 
+The app needs a `vocabio-backend` that knows the Indonesian modes and the prefixed word ids (`es-n001`, `id-n001`): an older one refuses Indonesian quizzes, and a newer one refuses unprefixed ids, both with 400.
+
 Without a Supabase configuration, the app still works in **guest mode** (quiz only: no saved progress, no statistics, no messaging, no articles).
 
 ## Validation
@@ -61,16 +64,16 @@ npm test           # Jest tests
 ## Architecture
 
 ```
-app/            Screens (Expo Router) — login, home, quiz, result, vocab, account, messages/*, articles/*
+app/            Screens (Expo Router) — login, language, [lang]/ (home, quiz, result, vocab), account, messages/*, articles/*
 components/     UI — ui/ (generic), quiz/, home/, account/, messaging/, articles/
 features/       Pure logic, no React or store — quizEngine, messagingLogic, articleLogic
-store/          Zustand state — quiz, progress, auth, messaging
+store/          Zustand state — quiz, progress, auth, messaging, current language
 hooks/          The only way screens reach the stores (useQuizSession, useQuizStats, useAuth, useChat…)
 services/       REST and socket.io clients for vocabio-backend
 lib/            Supabase client and authentication flow
-data/           Vocabulary dataset, one file per category
+data/           Vocabulary dataset, one folder per language (es/, id/), one file per category
 types/          Shared TypeScript types
-constants/      theme.ts (design system) · config.ts (business constants)
+constants/      theme.ts (design system) · config.ts (business constants) · languages.ts (languages and modes)
 __tests__/      Jest tests
 ```
 
@@ -88,9 +91,12 @@ Words are drawn with a probability weighted by mastery:
 - **Seen** → weight 5
 - **Mastered** → weight 1 (shows up rarely)
 
+### One language per quiz
+A quiz draws its words, and their wrong answers, from the vocabulary of its language only. Word ids carry their language (`es-n001`, `id-n001`); the backend refuses a quiz whose ids do not match its mode (400).
+
 ### Independent progress per direction
-FR→ES and ES→FR each have their own mastery counter.
-A word can be mastered in one direction and new in the other.
+Each direction (FR→ES, ES→FR, FR→ID, ID→FR) has its own mastery counter.
+A word can be mastered in one direction and new in the other; the vocabulary list shows the medal once it is mastered in both directions of its language.
 
 Progress is not stored on the device: `vocabio-backend` computes it from the finished quizzes it receives, and the app loads it at sign-in and after each finished quiz. A quiz closed midway does not count, nor does a quiz finished while offline. Guests have no progress: every word stays new for them.
 
@@ -100,7 +106,7 @@ Progress is not stored on the device: `vocabio-backend` computes it from the fin
 - `mastered` → 3 correct answers in a row
 
 ### Distractors
-The 3 wrong answers are drawn from the **same grammatical category** as the target word (verbs with verbs, nouns with nouns, etc.) so the choices stay plausible.
+The 3 wrong answers are drawn from the **same language and grammatical category** as the target word (verbs with verbs, nouns with nouns, etc.) so the choices stay plausible.
 
 ### Messaging
 Writes go through REST (every action gets a status code); real-time delivery goes through socket.io.
@@ -123,3 +129,4 @@ Articles come from `vocabio-backend`, which copies them from an external site: t
 | Streaks | `vocabio-backend` + `store/progressStore.ts` → `currentStreak` field |
 | Dark mode | `constants/theme.ts` → `DarkColors` + `useTheme` hook |
 | Pronunciation | `features/audio/` → expo-speech |
+| Another language | `constants/languages.ts` + `data/<lang>/` + its flag; the backend must accept its modes first |

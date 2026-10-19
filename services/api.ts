@@ -11,6 +11,7 @@ import type {
   ChatUser,
   Conversation,
   CreateConversationResponse,
+  Language,
   Message,
   MessagesPage,
   QuizSessionPayload,
@@ -109,9 +110,13 @@ export const quizApi = {
       body: JSON.stringify(payload),
     }),
 
-  getStats: () => request<QuizStats>('/quiz-sessions/stats'),
+  // The backend derives the language of each session from its mode. Without lang: every
+  // language together.
+  getStats: (lang?: Language) =>
+    request<QuizStats>(`/quiz-sessions/stats${lang ? `?lang=${lang}` : ''}`),
 
   // Computed by the backend from the finished quizzes saved with saveSession.
+  // Not filtered by language: loaded once at sign-in, the ids are unique across languages.
   getWordProgress: () => request<WordProgressRow[]>('/quiz-sessions/word-progress'),
 };
 

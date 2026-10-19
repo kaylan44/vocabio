@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
+import { LANGUAGES, MODES } from '../../constants/languages';
 import { QuizMode } from '../../types';
 import { Flag, FlagCountry } from '../ui/Flag';
 
@@ -22,37 +23,41 @@ interface ModeConfig {
   fromLabel: string;
   toLabel: string;
   accessibilityLabel: string;
-  // Each mode has its own tint: tile background + matching button colour.
+  // Each direction has its own tint: tile background + matching button colour.
   tint: string;
   accent: string;
 }
 
-const MODE_CONFIG: Record<QuizMode, ModeConfig> = {
-  'fr-es': {
-    from: 'fr',
-    to: 'es',
-    fromLabel: 'Du français',
-    toLabel: "vers l'espagnol",
-    accessibilityLabel: 'Quiz français vers espagnol',
-    tint: Colors.primaryLight,
-    accent: Colors.primary,
-  },
-  'es-fr': {
-    from: 'es',
-    to: 'fr',
-    fromLabel: "De l'espagnol",
-    toLabel: 'vers le français',
-    accessibilityLabel: 'Quiz espagnol vers français',
-    tint: Colors.accentLight,
-    accent: Colors.accent,
-  },
-};
+// Same layout for every language: French → target in blue, target → French in orange.
+function getModeConfig(mode: QuizMode): ModeConfig {
+  const { language, fromFrench } = MODES[mode];
+  const { fromLabel, toLabel, label } = LANGUAGES[language];
+  return fromFrench
+    ? {
+        from: 'fr',
+        to: language,
+        fromLabel: 'Du français',
+        toLabel,
+        accessibilityLabel: `Quiz français vers ${label.toLowerCase()}`,
+        tint: Colors.primaryLight,
+        accent: Colors.primary,
+      }
+    : {
+        from: language,
+        to: 'fr',
+        fromLabel,
+        toLabel: 'vers le français',
+        accessibilityLabel: `Quiz ${label.toLowerCase()} vers français`,
+        tint: Colors.accentLight,
+        accent: Colors.accent,
+      };
+}
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export const ModeCard: React.FC<ModeCardProps> = ({ mode, onPress, large = false }) => {
   const scale = useSharedValue(1);
-  const config = MODE_CONFIG[mode];
+  const config = getModeConfig(mode);
   const flagHeight = large ? ControlSize.flag : ControlSize.flagMedium;
 
   const animatedStyle = useAnimatedStyle(() => ({

@@ -58,13 +58,13 @@ describe('rowsToWords', () => {
       row({ mode: 'es-fr', totalSeen: 7 }),
     ]);
     expect(Object.keys(words)).toEqual(['n001']);
-    expect(words['n001'].frEs.totalSeen).toBe(2);
-    expect(words['n001'].esF.totalSeen).toBe(7);
+    expect(words['n001'].byMode['fr-es']?.totalSeen).toBe(2);
+    expect(words['n001'].byMode['es-fr']?.totalSeen).toBe(7);
   });
 
-  it('leaves the other mode at its defaults when only one mode has a row', () => {
+  it('has no entry for a mode without a row', () => {
     const words = rowsToWords([row({ mode: 'es-fr' })]);
-    expect(words['n001'].frEs).toMatchObject({ mastery: 'new', totalSeen: 0, lastSeen: 0 });
+    expect(words['n001'].byMode['fr-es']).toBeUndefined();
   });
 
   it('derives the mastery level from the streak', () => {
@@ -73,14 +73,14 @@ describe('rowsToWords', () => {
       row({ wordId: 'n002', correctStreak: 2, totalSeen: 9 }),
       row({ wordId: 'n003', correctStreak: 0, totalSeen: 4 }),
     ]);
-    expect(words['n001'].frEs.mastery).toBe('mastered');
-    expect(words['n002'].frEs.mastery).toBe('seen');
-    expect(words['n003'].frEs.mastery).toBe('seen');
+    expect(words['n001'].byMode['fr-es']?.mastery).toBe('mastered');
+    expect(words['n002'].byMode['fr-es']?.mastery).toBe('seen');
+    expect(words['n003'].byMode['fr-es']?.mastery).toBe('seen');
   });
 
   it('converts lastSeenAt to a timestamp', () => {
     const words = rowsToWords([row()]);
-    expect(words['n001'].frEs.lastSeen).toBe(Date.parse('2026-10-05T10:00:00.000Z'));
+    expect(words['n001'].byMode['fr-es']?.lastSeen).toBe(Date.parse('2026-10-05T10:00:00.000Z'));
   });
 });
 
@@ -165,17 +165,17 @@ describe('progressStore readers', () => {
   it('getModeProgressMap includes only words present in progress', () => {
     const frEsMap = useProgressStore.getState().getModeProgressMap('fr-es');
     expect(frEsMap['n001']?.totalSeen).toBe(3);
-    // n002 was only answered es-fr → frEs is default (totalSeen 0)
-    expect(frEsMap['n002']?.totalSeen).toBe(0);
+    // n002 was only answered es-fr → no fr-es entry
+    expect(frEsMap['n002']).toBeUndefined();
     // word never seen at all → not in map
     expect(frEsMap['n999']).toBeUndefined();
   });
 
   it('getWordCombinedProgress adds both modes and needs both mastered', () => {
     const { getWordCombinedProgress } = useProgressStore.getState();
-    expect(getWordCombinedProgress('n001')).toEqual({ totalSeen: 8, totalCorrect: 7, isMastered: true });
-    expect(getWordCombinedProgress('n002')).toEqual({ totalSeen: 1, totalCorrect: 1, isMastered: false });
-    expect(getWordCombinedProgress('n999')).toEqual({ totalSeen: 0, totalCorrect: 0, isMastered: false });
+    expect(getWordCombinedProgress('n001', 'es')).toEqual({ totalSeen: 8, totalCorrect: 7, isMastered: true });
+    expect(getWordCombinedProgress('n002', 'es')).toEqual({ totalSeen: 1, totalCorrect: 1, isMastered: false });
+    expect(getWordCombinedProgress('n999', 'es')).toEqual({ totalSeen: 0, totalCorrect: 0, isMastered: false });
   });
 });
 
@@ -190,5 +190,22 @@ describe('progressStore.clearProgress', () => {
 
     expect(useProgressStore.getState().words).toEqual({});
     expect(useProgressStore.getState().status).toBe('idle');
+  });
+});
+
+describe('progressStore readers, Indonesian word', () => {
+  beforeEach(async () => {
+    getWordProgress.mockResolvedValue([
+      row({ wordId: 'id-n001', mode: 'fr-id', correctStreak: 3, totalSeen: 3, totalCorrect: 3 }),
+      row({ wordId: 'id-n001', mode: 'id-fr', correctStreak: 3, totalSeen: 4, totalCorrect: 3 }),
+    ]);
+    await useProgressStore.getState().loadProgress();
+  });
+
+  it('adds only the two Indonesian modes and needs both mastered', () => {
+    const { getWordCombinedProgress } = useProgressStore.getState();
+    expect(getWordCombinedProgress('id-n001', 'id')).toEqual({ totalSeen: 7, totalCorrect: 6, isMastered: true });
+    // The Spanish modes have no row for this word
+    expect(getWordCombinedProgress('id-n001', 'es')).toEqual({ totalSeen: 0, totalCorrect: 0, isMastered: false });
   });
 });

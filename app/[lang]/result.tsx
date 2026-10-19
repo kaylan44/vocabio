@@ -13,10 +13,12 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { ResultMascot } from '../components/quiz/ResultMascot';
-import { Button } from '../components/ui/Button';
-import { Colors, Radius, Shadow, Spacing, Typography } from '../constants/theme';
-import { useQuizSession } from '../hooks/useQuizSession';
+import { ResultMascot } from '../../components/quiz/ResultMascot';
+import { Button } from '../../components/ui/Button';
+import { Colors, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
+import { getModeLabel } from '../../constants/languages';
+import { useRouteLanguage } from '../../hooks/useLanguage';
+import { useQuizSession } from '../../hooks/useQuizSession';
 
 // ─── Motivational messages by score ──────────────────────────────────────────
 function getResultMessage(score: number, total: number): { emoji: string; title: string; sub: string } {
@@ -30,6 +32,7 @@ function getResultMessage(score: number, total: number): { emoji: string; title:
 
 export default function ResultScreen() {
   const router = useRouter();
+  const language = useRouteLanguage();
   const { session, replay, goHome } = useQuizSession();
 
   // Animation values
@@ -48,7 +51,7 @@ export default function ResultScreen() {
 
   useEffect(() => {
     if (!session) {
-      router.replace('/');
+      router.replace(`/${language}` as never);
       return;
     }
     // Entrance animations
@@ -63,7 +66,7 @@ export default function ResultScreen() {
   const total = questions.length;
   const result = getResultMessage(score, total);
 
-  const modeLabel = mode === 'fr-es' ? 'Français → Espagnol' : 'Espagnol → Français';
+  const modeLabel = getModeLabel(mode);
 
   return (
     <SafeAreaView style={styles.safe}>

@@ -5,7 +5,11 @@ import { quizApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useQuizStore } from '../store/quizStore';
 import { useProgressStore } from '../store/progressStore';
-import { QuizMode } from '../types';
+import { MODES } from '../constants/languages';
+import { Language, QuizMode } from '../types';
+
+// The quiz screens live under the language of the mode: /es/quiz, /id/result…
+const languagePath = (mode: QuizMode, screen = '') => `/${MODES[mode].language}${screen}`;
 
 /**
  * Central hook for the quiz flow.
@@ -45,7 +49,7 @@ export function useQuizSession() {
     [readWordModeProgress, words],
   );
   const getWordCombinedProgress = useCallback(
-    (wordId: string) => readWordCombinedProgress(wordId),
+    (wordId: string, lang: Language) => readWordCombinedProgress(wordId, lang),
     [readWordCombinedProgress, words],
   );
 
@@ -53,7 +57,7 @@ export function useQuizSession() {
   const start = useCallback((mode: QuizMode) => {
     const progressMap = getModeProgressMap(mode);
     startSession(mode, progressMap);
-    router.push('/quiz');
+    router.push(languagePath(mode, '/quiz') as never);
   }, [getModeProgressMap, startSession, router]);
 
   // ─── Handle answer selection ─────────────────────────────────────────────────
@@ -79,7 +83,7 @@ export function useQuizSession() {
           .catch(err => console.warn('Quiz session not saved', err));
       }
       // Navigate to result — session data stays in store until reset
-      router.push('/result');
+      router.push(languagePath(session.mode, '/result') as never);
     } else {
       storeNextQuestion();
     }
@@ -94,10 +98,12 @@ export function useQuizSession() {
   }, [session, resetSession, start]);
 
   // ─── Go home ─────────────────────────────────────────────────────────────────
+  // Home of the session's language; the language screen if there is no session.
   const goHome = useCallback(() => {
+    const home = session ? languagePath(session.mode) : '/language';
     resetSession();
-    router.replace('/');
-  }, [resetSession, router]);
+    router.replace(home as never);
+  }, [session, resetSession, router]);
 
   return {
     session,

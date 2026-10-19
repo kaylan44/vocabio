@@ -8,9 +8,11 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useConversations } from '../../hooks/useConversations';
+import { useCurrentLanguage } from '../../hooks/useLanguage';
 
 export default function ConversationsScreen() {
   const router = useRouter();
+  const { homeHref } = useCurrentLanguage();
   const { user } = useAuth();
   const { conversations, status, refresh } = useConversations();
 
@@ -35,7 +37,7 @@ export default function ConversationsScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyTitle}>Aucune conversation</Text>
-        <Text style={styles.emptyText}>Trouve un autre apprenant et écris-lui en espagnol !</Text>
+        <Text style={styles.emptyText}>Trouve un autre apprenant et écris-lui dans la langue que tu apprends !</Text>
         <Button label="Nouvelle conversation" onPress={openSearch} />
       </View>
     );
@@ -45,7 +47,7 @@ export default function ConversationsScreen() {
     <SafeAreaView style={styles.safe}>
       <ScreenHeader
         title="Messages"
-        onBack={() => router.replace('/')}
+        onBack={() => router.replace(homeHref as never)}
         trailing={
           <TouchableOpacity style={styles.newButton} onPress={openSearch} accessibilityLabel="Nouvelle conversation">
             <Ionicons name="create-outline" size={ControlSize.buttonIcon} color={Colors.textOnPrimary} />

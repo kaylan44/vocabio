@@ -42,11 +42,11 @@ describe('useQuizSession', () => {
     useProgressStore.getState().clearProgress();
   });
 
-  it('start() creates a session and navigates to /quiz', () => {
+  it('start() creates a session and navigates to the quiz of its language', () => {
     const { result } = renderHook(() => useQuizSession());
     act(() => { result.current.start('fr-es'); });
     expect(result.current.session).not.toBeNull();
-    expect(mockPush).toHaveBeenCalledWith('/quiz');
+    expect(mockPush).toHaveBeenCalledWith('/es/quiz');
   });
 
   it('selectAnswer() correct updates score', () => {
@@ -85,7 +85,7 @@ describe('useQuizSession', () => {
       await act(async () => {});
 
       expect(getWordProgress).toHaveBeenCalledTimes(1);
-      expect(result.current.getWordCombinedProgress(wordId).totalSeen).toBe(1);
+      expect(result.current.getWordCombinedProgress(wordId, 'es').totalSeen).toBe(1);
       // New identity, so a list rendering through it refreshes its rows
       expect(result.current.getWordCombinedProgress).not.toBe(before);
     });
@@ -125,7 +125,7 @@ describe('useQuizSession', () => {
       act(() => { result.current.nextQuestion(); });
     }
 
-    expect(mockPush).toHaveBeenLastCalledWith('/result');
+    expect(mockPush).toHaveBeenLastCalledWith('/es/result');
   });
 
   describe('sending the finished session to the backend', () => {
@@ -160,7 +160,7 @@ describe('useQuizSession', () => {
       playQuiz(result, outcomes);
 
       expect(saveSession).not.toHaveBeenCalled();
-      expect(mockPush).toHaveBeenLastCalledWith('/result');
+      expect(mockPush).toHaveBeenLastCalledWith('/es/result');
     });
 
     it('still shows the result when saving fails', async () => {
@@ -172,17 +172,17 @@ describe('useQuizSession', () => {
       playQuiz(result, outcomes);
       await act(async () => {});
 
-      expect(mockPush).toHaveBeenLastCalledWith('/result');
+      expect(mockPush).toHaveBeenLastCalledWith('/es/result');
       expect(warn).toHaveBeenCalled();
       warn.mockRestore();
     });
   });
 
-  it('goHome() resets session and navigates to /', () => {
+  it('goHome() resets session and navigates to the home of its language', () => {
     const { result } = renderHook(() => useQuizSession());
     act(() => { result.current.start('fr-es'); });
     act(() => { result.current.goHome(); });
     expect(result.current.session).toBeNull();
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(mockReplace).toHaveBeenCalledWith('/es');
   });
 });
