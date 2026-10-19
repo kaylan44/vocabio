@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { quizApi } from '../services/api';
-import { LoadStatus, QuizMode, WordModeProgress, WordProgress, WordProgressRow } from '../types';
+import { Language, LoadStatus, QuizMode, WordModeProgress, WordProgress, WordProgressRow } from '../types';
 import { QUIZ_CONFIG } from '../constants/config';
+import { LANGUAGES } from '../constants/languages';
 
 export interface WordCombinedProgress {
   totalSeen: number;
@@ -22,21 +23,9 @@ interface ProgressState {
   loadProgress: () => Promise<void>;
   getWordModeProgress: (wordId: string, mode: QuizMode) => WordModeProgress | undefined;
   getModeProgressMap: (mode: QuizMode) => Record<string, WordModeProgress | undefined>;
-  getWordCombinedProgress: (wordId: string) => WordCombinedProgress;
+  getWordCombinedProgress: (wordId: string, lang: Language) => WordCombinedProgress;
   clearProgress: () => void;
 }
-
-const DEFAULT_MODE_PROGRESS: WordModeProgress = {
-  mastery: 'new',
-  correctStreak: 0,
-  totalSeen: 0,
-  totalCorrect: 0,
-  lastSeen: 0,
-};
-
-type ModeKey = 'frEs' | 'esF';
-
-const toModeKey = (mode: QuizMode): ModeKey => (mode === 'fr-es' ? 'frEs' : 'esF');
 
 // Ignore a response that arrives after a newer load, or after the user signed out.
 let loadId = 0;
@@ -60,25 +49,26 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   getWordModeProgress: (wordId, mode) => {
-    return get().words[wordId]?.[toModeKey(mode)];
+    return get().words[wordId]?.byMode[mode];
   },
 
   getModeProgressMap: (mode) => {
-    const modeKey = toModeKey(mode);
     const map: Record<string, WordModeProgress | undefined> = {};
     for (const [wordId, wp] of Object.entries(get().words)) {
-      map[wordId] = wp[modeKey];
+      map[wordId] = wp.byMode[mode];
     }
     return map;
   },
 
-  getWordCombinedProgress: (wordId) => {
+  // Adds the two modes of the language; mastered means mastered in both of them.
+  getWordCombinedProgress: (wordId, lang) => {
     const wp = get().words[wordId];
-    if (!wp) return { totalSeen: 0, totalCorrect: 0, isMastered: false };
-    const totalSeen = wp.frEs.totalSeen + wp.esF.totalSeen;
-    const totalCorrect = wp.frEs.totalCorrect + wp.esF.totalCorrect;
-    const isMastered = wp.frEs.mastery === 'mastered' && wp.esF.mastery === 'mastered';
-    return { totalSeen, totalCorrect, isMastered };
+    const modes = LANGUAGES[lang].modes.map(mode => wp?.byMode[mode]);
+    return {
+      totalSeen: modes.reduce((sum, p) => sum + (p?.totalSeen ?? 0), 0),
+      totalCorrect: modes.reduce((sum, p) => sum + (p?.totalCorrect ?? 0), 0),
+      isMastered: modes.every(p => p?.mastery === 'mastered'),
+    };
   },
 
   // Empties the memory only (sign-out, user change). Nothing is deleted on the backend.
@@ -100,12 +90,8 @@ export function computeMastery(streak: number, totalSeen: number): WordModeProgr
 export function rowsToWords(rows: WordProgressRow[]): Record<string, WordProgress> {
   const words: Record<string, WordProgress> = {};
   for (const row of rows) {
-    const word = words[row.wordId] ?? {
-      wordId: row.wordId,
-      frEs: { ...DEFAULT_MODE_PROGRESS },
-      esF: { ...DEFAULT_MODE_PROGRESS },
-    };
-    word[toModeKey(row.mode)] = {
+    const word = words[row.wordId] ?? { wordId: row.wordId, byMode: {} };
+    word.byMode[row.mode] = {
       mastery: computeMastery(row.correctStreak, row.totalSeen),
       correctStreak: row.correctStreak,
       totalSeen: row.totalSeen,

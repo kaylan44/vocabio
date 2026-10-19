@@ -153,6 +153,8 @@ export const ControlSize = {
   headerIconButton: 48,
   headerIcon: 26,
   buttonIcon: 20,
+  logo: 50,       // Vocabio logo next to the wordmark (language screen)
+  flagLarge: 44,  // language screen cards
   flag: 32,  // flag height, width follows the 3:2 ratio
   flagMedium: 24,
   flagSmall: 14,

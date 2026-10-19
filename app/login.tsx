@@ -71,7 +71,7 @@ export default function LoginScreen() {
           <Text style={styles.title}>
             <Text style={styles.titleAccent}>V</Text>ocabio
           </Text>
-          <Text style={styles.tagline}>Apprends l'espagnol, une session à la fois.</Text>
+          <Text style={styles.tagline}>Apprends une langue, une session à la fois.</Text>
         </View>
 
         {/* Auth actions */}
@@ -91,7 +91,7 @@ export default function LoginScreen() {
           {error && <Text style={styles.error}>{error}</Text>}
 
           {/* Guest button */}
-          <AuthButton onPress={async () => { await continueAsGuest(); router.replace('/'); }} style={styles.guestButton}>
+          <AuthButton onPress={async () => { await continueAsGuest(); router.replace('/language' as never); }} style={styles.guestButton}>
             <Text style={styles.guestLabel}>Essayer en tant qu'invité</Text>
           </AuthButton>
         </View>

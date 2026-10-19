@@ -3,7 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { AnswerTile } from './AnswerTile';
 import { QuizMode, TileState } from '../../types';
 import { Spacing } from '../../constants/theme';
-import { VOCABULARY } from '../../data/vocabulary';
+import { MODES } from '../../constants/languages';
+import { getVocabulary } from '../../data/vocabulary';
 
 interface TileGridProps {
   options: string[];
@@ -15,12 +16,15 @@ interface TileGridProps {
 }
 
 function getWrongAnswerHint(option: string, mode: QuizMode): string | undefined {
-  // option is a translation — find the word and return the reverse translation
-  const word = mode === 'fr-es'
-    ? VOCABULARY.find(w => w.target === option)
-    : VOCABULARY.find(w => w.french === option);
+  // option is a translation — find the word in the mode's language (the same French
+  // text can exist in another language) and return the reverse translation
+  const { language, fromFrench } = MODES[mode];
+  const words = getVocabulary(language);
+  const word = fromFrench
+    ? words.find(w => w.target === option)
+    : words.find(w => w.french === option);
   if (!word) return undefined;
-  return mode === 'fr-es' ? word.french : word.target;
+  return fromFrench ? word.french : word.target;
 }
 
 export const TileGrid: React.FC<TileGridProps> = ({

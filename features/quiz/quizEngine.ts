@@ -1,4 +1,5 @@
-import { VOCABULARY, getWordsByCategory } from '../../data/vocabulary';
+import { getVocabulary, getWordsByCategory } from '../../data/vocabulary';
+import { MODES } from '../../constants/languages';
 import {
   QuizMode,
   QuizQuestion,
@@ -57,15 +58,16 @@ export function selectWeightedWords(
 // ─── Distractor generation ────────────────────────────────────────────────────
 
 /**
- * Build 3 plausible wrong answers from the same grammatical category.
- * Ensures no duplicate with the correct answer.
+ * Build 3 plausible wrong answers from the same grammatical category, in the mode's
+ * language only. Ensures no duplicate with the correct answer.
  */
 function buildDistractors(
   correctWord: VocabWord,
   mode: QuizMode,
   excludeIds: string[]
 ): string[] {
-  const sameCategory = getWordsByCategory(correctWord.category).filter(
+  const { language, fromFrench } = MODES[mode];
+  const sameCategory = getWordsByCategory(language, correctWord.category).filter(
     w => w.id !== correctWord.id && !excludeIds.includes(w.id)
   );
 
@@ -73,14 +75,15 @@ function buildDistractors(
   const shuffled = [...sameCategory].sort(() => Math.random() - 0.5);
   const picked = shuffled.slice(0, 3);
 
-  return picked.map(w => (mode === 'fr-es' ? w.target : w.french));
+  return picked.map(w => (fromFrench ? w.target : w.french));
 }
 
 // ─── Question builder ─────────────────────────────────────────────────────────
 
 function buildQuestion(word: VocabWord, mode: QuizMode): QuizQuestion {
-  const targetWord = mode === 'fr-es' ? word.french : word.target;
-  const correctAnswer = mode === 'fr-es' ? word.target : word.french;
+  const { fromFrench } = MODES[mode];
+  const targetWord = fromFrench ? word.french : word.target;
+  const correctAnswer = fromFrench ? word.target : word.french;
 
   const distractors = buildDistractors(word, mode, []);
 
@@ -110,8 +113,9 @@ export function buildQuizSession(
 ): Omit<QuizSession, 'id'> {
   const count = QUIZ_CONFIG.questionsPerSession;
 
-  // Select words with weighted probability
-  const selectedWords = selectWeightedWords(VOCABULARY, count, progressMap);
+  // Select words of the mode's language with weighted probability
+  const words = getVocabulary(MODES[mode].language);
+  const selectedWords = selectWeightedWords(words, count, progressMap);
 
   const questions = selectedWords.map(w => buildQuestion(w, mode));
 

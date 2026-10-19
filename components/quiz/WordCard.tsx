@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
-import { GrammarCategory, WordLevel } from '../../types';
+import { LANGUAGES } from '../../constants/languages';
+import { FlagCountry, GrammarCategory, WordLevel } from '../../types';
 import { Flag } from '../ui/Flag';
 
 const CATEGORY_LABELS: Record<GrammarCategory, string> = {
@@ -11,12 +12,13 @@ const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   adverb: 'Adverbe',
   expression: 'Expression',
   pronoun: 'Pronom',
+  number: 'Nombre',
 };
 
 interface WordCardProps {
   word: string;
   category: GrammarCategory;
-  language: 'fr' | 'es';
+  language: FlagCountry;  // 'fr' or a language being learnt
   level: WordLevel;
 }
 
@@ -24,7 +26,7 @@ export const WordCard: React.FC<WordCardProps> = ({ word, category, language, le
   <View style={styles.container}>
     <View style={styles.languageRow}>
       <Flag country={language} height={ControlSize.flagSmall} />
-      <Text style={styles.languageHint}>{language === 'fr' ? 'Français' : 'Espagnol'}</Text>
+      <Text style={styles.languageHint}>{language === 'fr' ? 'Français' : LANGUAGES[language].label}</Text>
     </View>
     <Text style={styles.word}>{word}</Text>
     <View style={styles.badgeRow}>

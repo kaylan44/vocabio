@@ -8,15 +8,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { TileGrid } from '../components/quiz/TileGrid';
-import { WordCard } from '../components/quiz/WordCard';
-import { Button } from '../components/ui/Button';
-import { ProgressBar } from '../components/ui/ProgressBar';
-import { Colors, ControlSize, Radius, Spacing, Typography } from '../constants/theme';
-import { useQuizSession } from '../hooks/useQuizSession';
+import { TileGrid } from '../../components/quiz/TileGrid';
+import { WordCard } from '../../components/quiz/WordCard';
+import { Button } from '../../components/ui/Button';
+import { ProgressBar } from '../../components/ui/ProgressBar';
+import { Colors, ControlSize, Radius, Spacing, Typography } from '../../constants/theme';
+import { MODES } from '../../constants/languages';
+import { useRouteLanguage } from '../../hooks/useLanguage';
+import { useQuizSession } from '../../hooks/useQuizSession';
 
 export default function QuizScreen() {
   const router = useRouter();
+  const language = useRouteLanguage();
   const {
     session,
     currentQuestion,
@@ -30,16 +33,17 @@ export default function QuizScreen() {
     goHome,
   } = useQuizSession();
 
-  // Guard: if no session, go back home
+  // Guard: if no session, go back to the home of the language
   useEffect(() => {
     if (!session) {
-      router.replace('/');
+      router.replace(`/${language}` as never);
     }
   }, [session]);
 
   if (!session || !currentQuestion) return null;
 
-  const questionLanguage = session.mode === 'fr-es' ? 'fr' : 'es';
+  const { language: modeLanguage, fromFrench } = MODES[session.mode];
+  const questionLanguage = fromFrench ? 'fr' : modeLanguage;
 
   return (
     <SafeAreaView style={styles.safe}>

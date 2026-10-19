@@ -11,8 +11,8 @@
 
 ## Overview
 
-**Vocabio** is a mobile vocabulary quiz app for Spanish ↔ French, with user accounts and
-1:1 messaging.
+**Vocabio** is a mobile vocabulary quiz app for French speakers learning Spanish or
+Indonesian, with user accounts and 1:1 messaging.
 - React Native + Expo (SDK 55) — targets iOS, Android and web
 - Expo Router (file-based routing, typed routes)
 - Strict TypeScript
@@ -54,12 +54,16 @@
 vocabio2/
 ├── app/                        Screens — Expo Router (file-based)
 │   ├── _layout.tsx             Root layout: AuthGate, loads the auth session, mounts the messaging connection and the progress sync
-│   ├── login.tsx               Google sign-in or guest mode
-│   ├── index.tsx               Home — pick FR→ES / ES→FR
-│   ├── quiz.tsx                Quiz — active session
-│   ├── result.tsx              Result — final score, replay
-│   ├── vocab.tsx               Vocabulary list with per-word progress
-│   ├── account.tsx             User profile, quiz statistics, sign out
+│   ├── login.tsx               Google sign-in or guest mode, then /language
+│   ├── index.tsx               Redirects to /language (the language is chosen at each app start)
+│   ├── language.tsx            Language screen — one large card per language
+│   ├── [lang]/                 Screens of one language: /es/…, /id/…
+│   │   ├── _layout.tsx         Guard: an unknown language → /language; mirrors the language in languageStore
+│   │   ├── index.tsx           Home of the language — its two modes, vocabulary, articles (Spanish only), "Changer de langue"
+│   │   ├── quiz.tsx            Quiz — active session
+│   │   ├── result.tsx          Result — final score, replay
+│   │   └── vocab.tsx           Vocabulary list of the language with per-word progress
+│   ├── account.tsx             User profile, quiz statistics of the current language, sign out
 │   ├── articles/
 │   │   ├── _layout.tsx         Auth guard — redirects guests to /login
 │   │   ├── index.tsx           Article list with level filter and "load more"
@@ -78,7 +82,7 @@ vocabio2/
 │   │   ├── ProgressBar.tsx     Animated progress bar
 │   │   ├── ScreenHeader.tsx    Screen header (back, title, leading/trailing slots)
 │   │   ├── Avatar.tsx          User avatar (image or initials)
-│   │   ├── Flag.tsx            FR / ES flag (assets/flags/)
+│   │   ├── Flag.tsx            FR / ES / ID flag (assets/flags/)
 │   │   ├── GoogleLogo.tsx      Google logo for the SSO button
 │   │   └── MascotSprite.tsx    One mascot pose (run | hug | cool | happy) from assets/mascot/
 │   ├── quiz/                   Quiz-specific components
@@ -88,8 +92,9 @@ vocabio2/
 │   │   └── ResultMascot.tsx    Happy mascot head popping up above the score on the result card
 │   ├── home/
 │   │   ├── HomeMascot.tsx      Animated mascot: runs in, idles, sunglasses on tap
-│   │   ├── ModeCard.tsx        FR→ES or ES→FR mode tile (two side by side, one tint per mode)
-│   │   └── HomeLinkRow.tsx     White row to Articles / Vocabulary (illustration, title, subtitle, chevron)
+│   │   ├── ModeCard.tsx        Mode tile (two side by side): French → target in blue, target → French in orange
+│   │   ├── HomeLinkRow.tsx     White row to Articles / Vocabulary (illustration, title, subtitle, chevron)
+│   │   └── LanguageCard.tsx    Language screen card (flag, name, number of words)
 │   ├── account/
 │   │   └── StatsCard.tsx       Quiz statistics card (loading / error / empty / data)
 │   ├── articles/
@@ -119,11 +124,13 @@ vocabio2/
 │   ├── quizStore.ts            Current session state
 │   ├── progressStore.ts        Per-word progress: read-only in-memory copy of what the backend computes
 │   ├── authStore.ts            Auth status (loading | unauthenticated | guest | authenticated) + user
-│   └── messagingStore.ts       Conversations, message threads, typing
+│   ├── messagingStore.ts       Conversations, message threads, typing
+│   └── languageStore.ts        Last language visited, for the screens outside app/[lang]/ (memory only)
 │
 ├── hooks/                      Screens' entry points to the stores
 │   ├── useQuizSession.ts       Quiz — single entry point for the quiz/vocab screens
-│   ├── useQuizStats.ts         Quiz statistics from the backend (reloaded on screen focus)
+│   ├── useQuizStats.ts         Quiz statistics from the backend, per language (reloaded on screen focus)
+│   ├── useLanguage.ts          useRouteLanguage (screens under app/[lang]/) · useCurrentLanguage (other screens)
 │   ├── useProgressSync.ts      Loads the progress at sign-in, empties it at sign-out (mounted in the root _layout)
 │   ├── useArticles.ts          Article list: level filter, pagination
 │   ├── useArticle.ts           One article with its text
@@ -144,16 +151,18 @@ vocabio2/
 │
 ├── data/                       Vocabulary dataset, one folder per language, one file per category
 │   ├── vocabulary.ts           Aggregates the language folders: getVocabulary(lang), VOCABULARY (all languages) + helpers
-│   └── es/                     Spanish: nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · expressions.ts · pronouns.ts
+│   ├── es/                     Spanish: nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · expressions.ts · pronouns.ts
+│   └── id/                     Indonesian: nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · numbers.ts · expressions.ts · pronouns.ts
 │
 ├── types/index.ts              All the project's TypeScript types
 │
 ├── constants/
 │   ├── theme.ts                Design system — colors, typography, spacing, sizes, shadows
-│   └── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG, MASCOT_CONFIG, ARTICLES_CONFIG
+│   ├── config.ts               Business configuration — QUIZ_CONFIG, MESSAGING_CONFIG, MASCOT_CONFIG, ARTICLES_CONFIG
+│   └── languages.ts            LANGUAGES (label, copy, modes, hasArticles), MODES (language, direction), getModeLabel
 │
 ├── assets/
-│   ├── flags/                  FR / ES flags
+│   ├── flags/                  FR / ES / ID flags (flagcdn.com, 160px)
 │   ├── illustrations/          Home link illustrations — article, vocab (SVG source + 3x transparent PNG, only the PNG is bundled)
 │   └── mascot/                 Mascot sprites (transparent PNG) — run, hug, cool, happy
 │
@@ -166,8 +175,9 @@ vocabio2/
 ## Core types
 
 ```typescript
-type Language = 'es';   // language being learnt — also the data/ folder and the id prefix
-type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun';
+type Language = 'es' | 'id';   // language being learnt — also the data/ folder, the id prefix and the URL segment
+type FlagCountry = 'fr' | Language;
+type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun' | 'number';
 type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 
 interface VocabWord {
@@ -176,9 +186,10 @@ interface VocabWord {
   target: string;       // word in the language being learnt (no language field: see the id)
   category: GrammarCategory;
   level: WordLevel;
+  oppositeId?: string;  // adjectives: id of the opposite adjective, same language
 }
 
-type QuizMode = 'fr-es' | 'es-fr';
+type QuizMode = 'fr-es' | 'es-fr' | 'fr-id' | 'id-fr';
 
 interface QuizQuestion {
   wordId: string;
@@ -215,9 +226,43 @@ useProgressSync (hook, mounted in app/_layout.tsx)
     authStore       authenticated -> progressStore.loadProgress() (GET /quiz-sessions/word-progress)
                     sign-out or user change -> progressStore.clearProgress()
 
+useRouteLanguage (hook, screens under app/[lang]/)
+    URL             the [lang] segment, validated by app/[lang]/_layout.tsx
+
+useCurrentLanguage (hook, account, messages, app/[lang]/_layout.tsx)
+    languageStore   last language visited (set by the [lang] layout), null after a direct load
+
 Screens -> hooks only (never the stores directly)
 Exception: app/_layout.tsx initialises authStore at startup.
 ```
+
+---
+
+## Languages
+
+The languages being learnt are described in `constants/languages.ts`; screens and
+components read it instead of testing a language or a mode in their code.
+
+| Language | Modes | Articles | Data | IDs |
+|---|---|---|---|---|
+| es — Espagnol | fr-es, es-fr | yes | data/es/ | es-… |
+| id — Indonésien | fr-id, id-fr | no | data/id/ | id-… |
+
+Rules:
+- **The current language is carried by the URL** (`/es/…`, `/id/…`). `/` and the end of the
+  sign-in or guest choice lead to `/language`, at each app start: the choice is never
+  stored on the device. "Changer de langue" on the home screen goes back to `/language`.
+- `app/[lang]/_layout.tsx` redirects any other segment to `/language` before a screen
+  mounts, and mirrors the language into `languageStore`.
+- Shared screens (account, messages) read the last language visited through
+  `useCurrentLanguage`: the account shows the statistics of that language, and "back" goes
+  to its home. After a direct load of one of them it is `null`: statistics of every
+  language together, back to `/language`.
+- The language of a word is given by its folder and its id prefix — there is no
+  `language` field. The language of a quiz is given by its mode (`MODES[mode].language`).
+- Articles are Spanish only (`hasArticles`): the row is shown on the Spanish home only.
+- New routes are not in the generated typed routes until `expo start` runs: they are
+  passed as `'/es/quiz' as never`, like the other routes added after the last generation.
 
 ---
 
@@ -227,13 +272,17 @@ The numbers below are defined in `QUIZ_CONFIG` (`constants/config.ts`).
 
 Session generation (quizEngine.ts):
 - 10 questions per session
+- Words drawn from the vocabulary of the mode's language only (`getVocabulary(MODES[mode].language)`)
 - Weighted selection: new (weight 10) > seen (weight 5) > mastered (weight 1)
 - A word appears only once per session
-- 3 distractors drawn from the same grammatical category as the target word
+- 3 distractors drawn from the same language and grammatical category as the target word
+  — so two entries of a category must never share a French or target text (two correct answers)
 
 Progress (progressStore.ts):
-- FR→ES and ES→FR have independent counters (keys `frEs` and `esF` — `esF` is a historical typo, kept as is)
+- Each mode has independent counters: `WordProgress.byMode[mode]`, no entry for a mode the word was never played in
 - mastered = 3 correct answers in a row (correctStreak >= 3)
+- The vocabulary list counts a word as mastered when it is mastered in both modes of its
+  language (`getWordCombinedProgress(wordId, lang)`)
 - Storage and sync: see "Word progress" below
 
 Session (quizStore.ts):
@@ -251,7 +300,11 @@ Backend: `vocabio-backend`, same REST client and JWT as messaging (`quizApi` in 
 - `POST /quiz-sessions` — sent by `useQuizSession.nextQuestion` when leaving the last question,
   just before navigating to `/result`. Body built by `buildSessionPayload` (quizEngine.ts):
   `{ id, mode, answers: [{ wordId, category, level, isCorrect }] }`. The server computes the score.
-- `GET /quiz-sessions/stats` — read by `useQuizStats`, displayed by `StatsCard` on the account screen.
+  Every `wordId` must carry the prefix of the mode's language (`es-` for fr-es / es-fr, `id-`
+  for fr-id / id-fr), otherwise the backend answers 400 and the quiz is lost.
+- `GET /quiz-sessions/stats?lang=es|id` — read by `useQuizStats(lang)`, displayed by
+  `StatsCard` on the account screen for the current language. Without `lang`: every language
+  together (direct load of /account).
 
 Rules:
 - Only signed-in users send results. Guests have no JWT: nothing is sent, nothing is queued.
@@ -275,8 +328,9 @@ quizzes it already receives through `POST /quiz-sessions` (see "Quiz statistics"
 localStorage, and the app never computes counters itself.
 
 - `GET /quiz-sessions/word-progress` (`quizApi.getWordProgress`) — `WordProgressRow[]`, one row
-  per word and per mode. Called by `progressStore.loadProgress`; `rowsToWords` groups the rows
-  by word.
+  per word and per mode, every language at once (not filtered by language: each row carries
+  its mode, and the ids are unique across languages). Called by `progressStore.loadProgress`;
+  `rowsToWords` groups the rows by word.
 
 `loadProgress` runs at two moments:
 - when the user becomes authenticated (`useProgressSync`, mounted in the root layout);
@@ -317,6 +371,8 @@ The backend copies short news articles in easy Spanish from an external site; th
 Rules:
 - Signed-in users only. `app/articles/_layout.tsx` redirects guests to `/login`, and the Home
   section is hidden for them.
+- Spanish only: the row is shown on the Spanish home only (`LANGUAGES.es.hasArticles`), and
+  "back" after a direct load goes to `/es`.
 - No store: like the quiz statistics, the three hooks keep local state. Nothing is cached
   between two visits.
 - The list is loaded on mount and when the level changes, **not** on every focus: coming back
@@ -441,8 +497,27 @@ Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`
 | pronoun | es/pronouns.ts | es-p001–es-p030 | 30 | — | — | 30 |
 | **Total** | | | **335** | **245** | **50** | **630** |
 
-To add words: add them to the category file, continue the ID sequence
-(e.g. the next noun is `es-n201`) and **update this table**.
+224 Indonesian entries split across `data/id/*.ts`, all A1:
+
+| Category | File | IDs | A1 | Notes |
+|---|---|---|---|---|
+| noun | id/nouns.ts | id-n001–id-n060 | 60 | id-n031–id-n046: family, id-n047–id-n050: durations, id-n051–id-n060: food (warung) |
+| verb | id/verbs.ts | id-v001–id-v028 | 28 | id-v026–id-v028: warung |
+| adjective | id/adjectives.ts | id-a001–id-a033 | 33 | id-a001–id-a030: pairs of opposites (`oppositeId`), ganteng and bagus point to jelek, which points back to cantik; id-a031–id-a033: food, no opposite |
+| adverb | id/adverbs.ts | id-d001–id-d011 | 11 | time: today, tomorrow, already, not yet… |
+| number | id/numbers.ts | id-c001–id-c026 | 26 | 0–20, 50, 100, 1 000, a million, a billion |
+| expression | id/expressions.ts | id-e001–id-e057 | 57 | id-e001–id-e018: questions, id-e019–id-e041: statements, id-e042–id-e048: time of day, id-e049–id-e057: warung |
+| pronoun | id/pronouns.ts | id-p001–id-p009 | 9 | |
+| **Total** | | | **224** | |
+
+Indonesian has no articles. Its French side says "tu" (questions use
+`kamu`), and translations that would collide in a category get a precision in brackets
+("je (poli)" / "je (familier)", "femme (courant)" / "femme (soutenu)").
+
+To add words: add them to the category file of their language, continue the ID sequence
+(e.g. the next Spanish noun is `es-n201`, the next Indonesian one `id-n061`) and **update
+this table**. `__tests__/vocabulary.test.ts` checks the id format, gaps, duplicates, and
+for Indonesian the unique texts per category and the `oppositeId` links.
 Never renumber an existing ID: the progress and quiz results stored on the backend refer to it.
 The language prefix keeps ids unique across languages; the backend migrated the old
 unprefixed Spanish ids (`n001` → `es-n001`) when it introduced the prefix.
@@ -459,10 +534,11 @@ unprefixed Spanish ids (`n001` → `es-n001`) when it introduced the prefix.
 | Article glosses in French | vocabio-backend | The source only provides English explanations |
 | Streaks | vocabio-backend + store/progressStore.ts | Add currentStreak, bestStreak (stored by the backend) |
 | Spaced repetition (SM-2) | features/quiz/quizEngine.ts | Replace the weight system with the SM-2 algorithm |
-| Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
+| Level filter | app/[lang]/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
 | Native Google Sign-In | lib/auth.ts | expo-auth-session (PKCE) + dev build |
 | Offline quizzes | hooks/useQuizSession.ts | Queue finished sessions that could not be sent; safe to retry, the session id is an idempotency key |
-| More languages | see PLAN.md (Indonesian, planned) | One folder per language under data/, language given by the folder and the id prefix, no language field on VocabWord |
+| Another language | types/index.ts + constants/languages.ts + data/<lang>/ | Add it to `Language` and `QuizMode`, to LANGUAGES / MODES / LANGUAGE_LIST, its flag to Flag.tsx; the backend must accept its modes first |
+| Remember the language | — | Out of scope for now: it would need device storage (see CLAUDE.md) |
 
 ---
 

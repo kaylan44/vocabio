@@ -1,19 +1,17 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
+import { getModeLabel, MODES } from '../../constants/languages';
 import { getWordById } from '../../data/vocabulary';
-import type { GrammarCategory, LoadStatus, QuizMode, QuizStats } from '../../types';
+import type { GrammarCategory, LoadStatus, QuizStats } from '../../types';
 
 interface StatsCardProps {
   stats: QuizStats | null;
   status: LoadStatus;
   onRetry: () => void;
+  // Language the numbers are about, shown next to the title. Absent: every language.
+  languageLabel?: string;
 }
-
-const MODE_LABELS: Record<QuizMode, string> = {
-  'fr-es': 'Français → Espagnol',
-  'es-fr': 'Espagnol → Français',
-};
 
 const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   noun: 'Noms',
@@ -22,6 +20,7 @@ const CATEGORY_LABELS: Record<GrammarCategory, string> = {
   adverb: 'Adverbes',
   expression: 'Expressions',
   pronoun: 'Pronoms',
+  number: 'Nombres',
 };
 
 function formatAccuracy(accuracy: number | null): string {
@@ -78,7 +77,7 @@ function StatsBody({ stats }: { stats: QuizStats }) {
         {stats.byMode.map(m => (
           <Row
             key={m.mode}
-            label={MODE_LABELS[m.mode] ?? m.mode}
+            label={m.mode in MODES ? getModeLabel(m.mode) : m.mode}
             detail={`${m.correct}/${m.answers}`}
             value={formatAccuracy(m.accuracy)}
           />
@@ -122,7 +121,7 @@ function StatsBody({ stats }: { stats: QuizStats }) {
   );
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ stats, status, onRetry }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ stats, status, onRetry, languageLabel }) => {
   let body: React.ReactNode;
 
   if (stats) {
@@ -147,7 +146,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({ stats, status, onRetry }) 
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Statistiques</Text>
+      <Text style={styles.title}>
+        {languageLabel ? `Statistiques · ${languageLabel}` : 'Statistiques'}
+      </Text>
       {body}
     </View>
   );
