@@ -1,0 +1,327 @@
+import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import {
+  Image,
+  LayoutChangeEvent,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { HomeMascot } from '../../components/home/HomeMascot';
+import { HomeLinkRow } from '../../components/home/HomeLinkRow';
+import { ModeCard } from '../../components/home/ModeCard';
+import { Colors, ControlSize, Layout, Radius, Spacing, Typography } from '../../constants/theme';
+import { CounterBadge } from '../../components/ui/CounterBadge';
+import { Flag } from '../../components/ui/Flag';
+import { LANGUAGES } from '../../constants/languages';
+import { useAuth } from '../../hooks/useAuth';
+import { useUnreadTotal } from '../../hooks/useConversations';
+import { useRouteLanguage } from '../../hooks/useLanguage';
+import { useQuizSession } from '../../hooks/useQuizSession';
+import { QuizMode } from '../../types';
+
+const logoImage = require('../../assets/vocabio-logo.png');
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const language = useRouteLanguage();
+  const config = LANGUAGES[language];
+  const { start } = useQuizSession();
+  const { isAuthenticated } = useAuth();
+  const unreadTotal = useUnreadTotal();
+  const { width } = useWindowDimensions();
+  const isWide = width >= Layout.tabletBreakpoint;
+
+  // Top bar sits outside the ScrollView so it can't be pulled down,
+  // and slides out of view as the user scrolls down (back in on scroll up).
+  const [topBarHeight, setTopBarHeight] = useState(0);
+  const topBarHeightSv = useSharedValue(0);
+  const topBarOffset = useSharedValue(0);
+  const lastScrollY = useSharedValue(0);
+
+  const handleTopBarLayout = (e: LayoutChangeEvent) => {
+    const { height } = e.nativeEvent.layout;
+    topBarHeightSv.value = height;
+    setTopBarHeight(height);
+  };
+
+  const scrollHandler = useAnimatedScrollHandler(e => {
+    const y = Math.max(0, e.contentOffset.y);
+    const next = topBarOffset.value + (y - lastScrollY.value);
+    topBarOffset.value = Math.min(Math.max(next, 0), topBarHeightSv.value);
+    lastScrollY.value = y;
+  });
+
+  const topBarStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -topBarOffset.value }],
+  }));
+
+  const handleModeSelect = (mode: QuizMode) => {
+    start(mode);
+  };
+
+  const handleOpenVocab = () => {
+    router.push(`/${language}/vocab` as never);
+  };
+
+  const handleChangeLanguage = () => {
+    router.replace('/language' as never);
+  };
+
+  const handleOpenArticles = () => {
+    router.push('/articles' as never);
+  };
+
+  const handleMessagesPress = () => {
+    router.push('/messages' as never);
+  };
+
+  const handleAccountPress = () => {
+    router.push((isAuthenticated ? '/account' : '/login') as never);
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Animated.ScrollView
+          contentContainerStyle={[styles.scroll, { paddingTop: topBarHeight + Spacing.sm }]}
+          showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          bounces={false}
+          overScrollMode="never"
+        >
+          <View style={styles.hero}>
+            <View style={styles.heroTexts}>
+              <Text style={styles.tagline}>{config.tagline}</Text>
+              <TouchableOpacity
+                onPress={handleChangeLanguage}
+                style={styles.languageButton}
+                accessibilityRole="button"
+                accessibilityLabel="Changer de langue"
+              >
+                <Flag country={language} height={ControlSize.flagSmall} />
+                <Text style={styles.languageButtonText}>Changer de langue</Text>
+              </TouchableOpacity>
+            </View>
+            <HomeMascot />
+          </View>
+
+          {/* Mode selection */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Choisis un mode</Text>
+            <View style={styles.cards}>
+              {config.modes.map(mode => (
+                <ModeCard key={mode} mode={mode} onPress={handleModeSelect} large={isWide} />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.links}>
+            {/* Articles — Spanish only, signed-in users only: the backend routes need a JWT */}
+            {config.hasArticles && isAuthenticated ? (
+              <HomeLinkRow
+                illustration="article"
+                title="Lire un article"
+                subtitle="Découvre des textes en espagnol"
+                onPress={handleOpenArticles}
+              />
+            ) : null}
+
+            {/* Vocabulary access */}
+            <HomeLinkRow
+              illustration="vocab"
+              title="Voir le vocabulaire"
+              subtitle="Enrichis ton lexique"
+              onPress={handleOpenVocab}
+            />
+          </View>
+        </Animated.ScrollView>
+
+        {/* Top bar */}
+        <Animated.View style={[styles.topBar, topBarStyle]} onLayout={handleTopBarLayout}>
+          <View style={styles.topBarContent}>
+            <View style={styles.logoContainer}>
+              <Image source={logoImage} style={styles.logoIcon} />
+              <Text style={styles.logoText}>
+                <Text style={styles.logoV}>V</Text>ocabio
+              </Text>
+            </View>
+            <View style={styles.headerActions}>
+              {isAuthenticated ? (
+                <TouchableOpacity onPress={handleMessagesPress} style={styles.iconButton} accessibilityLabel="Messages">
+                  <Ionicons name="paper-plane-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
+                  <View style={styles.unreadBadge}>
+                    <CounterBadge count={unreadTotal} />
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+              {isAuthenticated ? (
+                <TouchableOpacity onPress={handleAccountPress} style={styles.iconButton} accessibilityLabel="Mon compte">
+                  <Ionicons name="settings-outline" size={ControlSize.headerIcon} color={Colors.textPrimary} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={handleAccountPress} style={styles.loginButton} accessibilityLabel="Se connecter">
+                  <Text style={styles.loginButtonText}>Se connecter</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  container: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  // The scroll content and the top bar content share one centred column, so
+  // the page stays readable on tablet and web instead of stretching edge to edge.
+  scroll: {
+    flexGrow: 1,
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+    gap: Spacing.xl,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background,
+  },
+  topBarContent: {
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -Spacing.xs,
+    right: -Spacing.xs,
+  },
+  iconButton: {
+    width: ControlSize.headerIconButton,
+    height: ControlSize.headerIconButton,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  loginButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  loginButtonText: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textPrimary,
+  },
+  logoIcon: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+  },
+  logoText: {
+    fontSize: Typography.sizes.display,
+    fontWeight: Typography.weights.extrabold,
+    color: Colors.textPrimary,
+    letterSpacing: -1,
+  },
+  logoV: {
+    color: Colors.success,
+    fontWeight: Typography.weights.extrabold,
+  },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  heroTexts: {
+    // Shrinks to wrap on phones, keeps its natural width on wide screens so the
+    // mascot stays next to the text instead of drifting to the far right.
+    flexShrink: 1,
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+  },
+  languageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  languageButtonText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textSecondary,
+  },
+  tagline: {
+    fontSize: Typography.sizes.md,
+    color: Colors.textSecondary,
+    fontWeight: Typography.weights.regular,
+    lineHeight: 22,
+  },
+  section: {
+    gap: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  cards: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  links: {
+    gap: Spacing.md,
+  },
+});

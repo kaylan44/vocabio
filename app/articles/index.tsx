@@ -22,7 +22,7 @@ export default function ArticlesScreen() {
   // Direct load of /articles (e.g. web refresh) has no history to go back to.
   const handleBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace('/' as never);
+    else router.replace('/es' as never);  // the articles are in Spanish
   };
 
   const renderEmpty = () => {

@@ -1,6 +1,10 @@
 # Plan — Indonesian in Vocabio
 
-Status: **planned**, not started. Backend side: `vocabio-backend/PLAN.md`, step 9.
+Status: **implemented** — PR 1 on `chore/vocab-target-field`, PR 2 on `feat/indonesian`.
+Backend side: `vocabio-backend/PLAN.md`, step 9 (implemented; it refuses unprefixed ids with
+400, so PR 1 must be merged as soon as the backend is deployed). Deviation: the Indonesian
+expressions are in one `expressions.ts` (one file per category, CLAUDE.md), not
+`questions.ts` + `phrases.ts`.
 
 Goal: a second language to learn, Indonesian, next to Spanish. The user picks the
 language on a dedicated screen after signing in (or choosing guest mode), then lands
@@ -98,7 +102,7 @@ Order of the changes, as recommended in CLAUDE.md:
 9. **Docs**: `AGENTS.md` (tree, dataset table, rules, the "More languages" row) and
    `README.md` (features).
 
-## Indonesian dataset (draft, all A1, 177 entries)
+## Indonesian dataset (all A1, 224 entries)
 
 **Pitfall**: the quiz offers distractors from the same category. Two entries with the
 same French text would give two correct answers, so every French translation is unique
@@ -117,10 +121,14 @@ The French side uses "tu" (app rule), so the questions use `kamu`, not `Anda`.
 | number | 26 | nol — zéro · satu — un · dua — deux · tiga — trois · empat — quatre · lima — cinq · enam — six · tujuh — sept · delapan — huit · sembilan — neuf · sepuluh — dix · sebelas — onze · dua belas — douze · tiga belas — treize · empat belas — quatorze · lima belas — quinze · enam belas — seize · tujuh belas — dix-sept · delapan belas — dix-huit · sembilan belas — dix-neuf · dua puluh — vingt · lima puluh — cinquante · seratus — cent · seribu — mille · sejuta — un million · satu miliar — un milliard |
 | verb | 25 | makan — manger · minum — boire · tidur — dormir · pergi — aller · datang — venir · pulang — rentrer · tinggal — habiter · bekerja — travailler · belajar — apprendre · berbicara — parler · membaca — lire · menulis — écrire · melihat — voir · mendengar — entendre · membeli — acheter · mau — vouloir · bisa — pouvoir · punya — avoir · tahu — savoir · mengerti — comprendre · suka — aimer · memberi — donner · mengambil — prendre · membuat — faire · ada — il y a |
 | adjective (pairs) | 30 | besar / kecil — grand / petit · panjang / pendek — long / court · baru / lama — nouveau / ancien · baik / buruk — bon / mauvais · panas / dingin — chaud / froid · mahal / murah — cher / bon marché · cepat / lambat — rapide / lent · senang / sedih — content / triste · mudah / sulit — facile / difficile · bersih / kotor — propre / sale · muda / tua — jeune / vieux · cantik / jelek — beau (femme) / laid · ganteng — beau (homme) · bagus — bien (de qualité) · jauh / dekat — loin / proche · berat / ringan — lourd / léger |
-| noun | 46 | rumah — maison · air — eau · makanan — nourriture · nasi — riz · kopi — café · teh — thé · teman — ami · keluarga — famille · orang — personne · laki-laki — homme · perempuan — femme (courant) · wanita — femme (soutenu) · anak — enfant · bapak — monsieur · kota — ville · negara — pays · jalan — rue · toko — magasin · pasar — marché · uang — argent · hari — jour · malam — nuit · pagi — matin · minggu — semaine · tahun — année · nama — nom · pekerjaan — travail · sekolah — école · mobil — voiture · motor — moto |
-| noun (family) | — | ayah — père · ibu — mère · orang tua — parents · suami — mari · istri — épouse · anak laki-laki — fils · anak perempuan — fille · kakak — frère / sœur aîné(e) · adik — frère / sœur cadet(te) · kakek — grand-père · nenek — grand-mère · cucu — petit-enfant · paman — oncle · bibi — tante · sepupu — cousin(e) · keponakan — neveu / nièce (counted in the 46 nouns above) |
+| noun | 50 | rumah — maison · air — eau · makanan — nourriture · nasi — riz · kopi — café · teh — thé · teman — ami · keluarga — famille · orang — personne · laki-laki — homme · perempuan — femme (courant) · wanita — femme (soutenu) · anak — enfant · bapak — monsieur · kota — ville · negara — pays · jalan — rue · toko — magasin · pasar — marché · uang — argent · hari — jour · malam — nuit · pagi — matin · minggu — semaine · tahun — année · nama — nom · pekerjaan — travail · sekolah — école · mobil — voiture · motor — moto |
+| noun (family) | — | ayah — père · ibu — mère · orang tua — parents · suami — mari · istri — épouse · anak laki-laki — fils · anak perempuan — fille · kakak — frère / sœur aîné(e) · adik — frère / sœur cadet(te) · kakek — grand-père · nenek — grand-mère · cucu — petit-enfant · paman — oncle · bibi — tante · sepupu — cousin(e) · keponakan — neveu / nièce (counted in the 50 nouns above) |
+| noun (durations) | — | detik — seconde · menit — minute · jam — heure · bulan — mois (jour, semaine, année: hari, minggu, tahun above; counted in the 50 nouns) |
 | expression (questions) | 18 | Apa? — Quoi ? · Siapa? — Qui ? · Di mana? — Où ? · Ke mana? — Vers où ? · Dari mana? — D'où ? · Kapan? — Quand ? · Kenapa? — Pourquoi ? · Bagaimana? — Comment ? · Berapa? — Combien ? · Yang mana? — Lequel ? · Apa kabar? — Comment ça va ? · Siapa nama kamu? — Comment tu t'appelles ? · Dari mana asal kamu? — D'où viens-tu ? · Kamu tinggal di mana? — Où habites-tu ? · Berapa umur kamu? — Quel âge as-tu ? · Berapa harganya? — Combien ça coûte ? · Kamu bisa berbicara bahasa Inggris? — Parles-tu anglais ? · Di mana toilet? — Où sont les toilettes ? |
 | expression (statements) | 23 | Nama saya… — Je m'appelle… · Saya dari Prancis — Je viens de France · Saya tinggal di… — J'habite à… · Saya orang Prancis — Je suis français(e) · Umur saya … tahun — J'ai … ans · Saya bekerja sebagai… — Je travaille comme… · Saya tidak mengerti — Je ne comprends pas · Saya belajar bahasa Indonesia — J'apprends l'indonésien · Saya bisa berbicara sedikit bahasa Indonesia — Je parle un petit peu indonésien · Saya tidak bisa berbicara bahasa Indonesia — Je ne parle pas indonésien · Kabar baik — Ça va bien · Ya — Oui · Tidak — Non · Terima kasih — Merci · Sama-sama — De rien · Maaf — Pardon · Permisi — Excuse-moi · Tolong — S'il te plaît (pour demander) · Selamat pagi — Bonjour (le matin) · Selamat siang — Bonjour (la journée) · Selamat malam — Bonsoir · Sampai jumpa — Au revoir · Senang bertemu denganmu — Enchanté(e) |
+| added: time (adverb) | 11 | hari ini — aujourd'hui · besok — demain · kemarin — hier · sekarang — maintenant · nanti — plus tard · tadi — tout à l'heure (passé) · sudah — déjà · belum — pas encore · selalu — toujours · sering — souvent · kadang-kadang — parfois |
+| added: time of day (expression) | 7 | Jam berapa sekarang? — Quelle heure est-il ? · Jam tiga — Trois heures · Jam setengah empat — Trois heures et demie · Jam tiga lewat seperempat — Trois heures et quart · Jam empat kurang seperempat — Quatre heures moins le quart · Berapa lama? — Combien de temps ? · Sebentar — Un instant |
+| added: warung | 25 | nouns: warung, ayam — poulet, ikan — poisson, sayur — légumes, telur — œuf, mie — nouilles, gula — sucre, garam — sel, es — glaçons, buah — fruit · verbs: pesan — commander, bayar — payer, masak — cuisiner · adjectives: pedas — épicé, enak — délicieux, manis — sucré · expressions: Saya mau pesan…, Minta menu, Minta bon, Tidak pedas, Pedas sedikit, Enak sekali!, Selamat makan, Tanpa gula, Bungkus |
 
 To be reviewed by the developer before PR 2; corrections go into this table first.
 

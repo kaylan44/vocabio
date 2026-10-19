@@ -9,20 +9,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../constants/theme';
-import { getWordsByCategory } from '../data/vocabulary';
-import { useQuizSession } from '../hooks/useQuizSession';
-import { GrammarCategory, VocabWord, WordLevel } from '../types';
+import { Colors, ControlSize, Radius, Shadow, Spacing, Typography } from '../../constants/theme';
+import { LANGUAGES } from '../../constants/languages';
+import { getCategories, getWordsByCategory } from '../../data/vocabulary';
+import { useRouteLanguage } from '../../hooks/useLanguage';
+import { useQuizSession } from '../../hooks/useQuizSession';
+import { GrammarCategory, VocabWord, WordLevel } from '../../types';
 import { useState } from 'react';
 
-const CATEGORY_OPTIONS: { key: GrammarCategory; label: string }[] = [
-  { key: 'noun', label: 'Noms' },
-  { key: 'verb', label: 'Verbes' },
-  { key: 'adjective', label: 'Adjectifs' },
-  { key: 'adverb', label: 'Adverbes' },
-  { key: 'expression', label: 'Expressions' },
-  { key: 'pronoun', label: 'Pronoms' },
-];
+const CATEGORY_LABELS: Record<GrammarCategory, string> = {
+  noun: 'Noms',
+  verb: 'Verbes',
+  adjective: 'Adjectifs',
+  adverb: 'Adverbes',
+  number: 'Nombres',
+  expression: 'Expressions',
+  pronoun: 'Pronoms',
+};
 
 const LEVEL_ORDER: WordLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
@@ -36,11 +39,14 @@ function getCombinedBadgeColor(totalCorrect: number, totalSeen: number): string 
 
 export default function VocabularyScreen() {
   const router = useRouter();
+  const language = useRouteLanguage();
+  // Only the categories this language has words in (no adverbs in Indonesian, no numbers in Spanish).
+  const categories = useMemo(() => getCategories(language), [language]);
   const [category, setCategory] = useState<GrammarCategory>('noun');
   const { getWordCombinedProgress } = useQuizSession();
 
   const sections = useMemo(() => {
-    const words = getWordsByCategory(category);
+    const words = getWordsByCategory(language, category);
     const grouped: Record<string, VocabWord[]> = {};
     for (const level of LEVEL_ORDER) {
       grouped[level] = [];
@@ -54,12 +60,15 @@ export default function VocabularyScreen() {
       .filter((level) => grouped[level].length > 0)
       .map((level) => ({
         title: level,
-        data: grouped[level].sort((a, b) => a.french.localeCompare(b.french)),
+        // Numbers keep their dataset order (0, 1, 2…); the other words are alphabetical.
+        data: category === 'number'
+          ? grouped[level]
+          : grouped[level].sort((a, b) => a.french.localeCompare(b.french)),
       }));
-  }, [category]);
+  }, [language, category]);
 
   const renderItem = useCallback(({ item }: { item: VocabWord }) => {
-    const combined = getWordCombinedProgress(item.id);
+    const combined = getWordCombinedProgress(item.id, language);
     const showCounter = combined.totalSeen > 0;
     return (
       <View style={styles.wordRow}>
@@ -79,7 +88,7 @@ export default function VocabularyScreen() {
         </View>
       </View>
     );
-  }, [getWordCombinedProgress]);
+  }, [getWordCombinedProgress, language]);
 
   const renderSectionHeader = useCallback(({ section }: { section: { title: string } }) => (
     <View style={styles.sectionHeader}>
@@ -92,29 +101,31 @@ export default function VocabularyScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backBtn} accessibilityLabel="Retour">
+        <TouchableOpacity onPress={() => router.push(`/${language}` as never)} style={styles.backBtn} accessibilityLabel="Retour">
           <Ionicons name="arrow-back" size={ControlSize.buttonIcon} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.title}>
             <Text style={styles.titleV}>V</Text>ocabulaire
           </Text>
-          <Text style={styles.subtitle}>Consulte les mots par catégorie.</Text>
+          <Text style={styles.subtitle}>
+            {LANGUAGES[language].label} · consulte les mots par catégorie.
+          </Text>
         </View>
       </View>
 
       {/* Category grid 2×3 */}
       <View style={styles.categoryGrid}>
-        {CATEGORY_OPTIONS.map((option) => {
-          const isActive = option.key === category;
+        {categories.map((key) => {
+          const isActive = key === category;
           return (
             <TouchableOpacity
-              key={option.key}
-              onPress={() => setCategory(option.key)}
+              key={key}
+              onPress={() => setCategory(key)}
               style={[styles.categoryButton, isActive && styles.categoryButtonActive]}
             >
               <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
-                {option.label}
+                {CATEGORY_LABELS[key]}
               </Text>
             </TouchableOpacity>
           );
@@ -123,7 +134,7 @@ export default function VocabularyScreen() {
 
       <View style={styles.listHeader}>
         <Text style={styles.listTitle}>
-          {CATEGORY_OPTIONS.find((o) => o.key === category)?.label}
+          {CATEGORY_LABELS[category]}
         </Text>
         <Text style={styles.listCount}>{totalWords} mots</Text>
       </View>
