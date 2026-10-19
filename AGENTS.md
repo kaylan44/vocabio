@@ -142,9 +142,9 @@ vocabio2/
 │   ├── supabase.ts             Supabase client (AsyncStorage on native, localStorage on web)
 │   └── auth.ts                 Google Sign-In flow (web done, native to do)
 │
-├── data/                       Vocabulary dataset, one file per category
-│   ├── vocabulary.ts           Aggregates the files below into VOCABULARY + helpers
-│   ├── nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · expressions.ts · pronouns.ts
+├── data/                       Vocabulary dataset, one folder per language, one file per category
+│   ├── vocabulary.ts           Aggregates the language folders: getVocabulary(lang), VOCABULARY (all languages) + helpers
+│   └── es/                     Spanish: nouns.ts · verbs.ts · adjectives.ts · adverbs.ts · expressions.ts · pronouns.ts
 │
 ├── types/index.ts              All the project's TypeScript types
 │
@@ -166,13 +166,14 @@ vocabio2/
 ## Core types
 
 ```typescript
+type Language = 'es';   // language being learnt — also the data/ folder and the id prefix
 type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun';
 type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 
 interface VocabWord {
-  id: string;
+  id: string;           // 'es-n001': language prefix, category letter, 3 digits
   french: string;
-  spanish: string;
+  target: string;       // word in the language being learnt (no language field: see the id)
   category: GrammarCategory;
   level: WordLevel;
 }
@@ -421,28 +422,30 @@ Sprites live in `assets/mascot/` and are only rendered through `MascotSprite` (`
 - Store access: only from hooks (`hooks/`), plus `authStore` in `app/_layout.tsx` — screens never touch the stores directly
 - Pure logic (testable without React) goes in `features/`
 - Types: all in types/index.ts — no inline types in components except local prop interfaces
-- Word IDs: category prefix + 3 digits, continuous sequence with no gaps (see table below)
+- Word IDs: language prefix + category letter + 3 digits (`es-n001`), continuous sequence with no gaps (see table below)
 - UI copy: French, always addressing the user with "tu" ("Choisis un mode", "Réessaie") — never "vous"
 
 ---
 
 ## Vocabulary dataset
 
-630 words split across `data/*.ts`, aggregated by `data/vocabulary.ts`:
+630 Spanish words split across `data/es/*.ts`, aggregated by `data/vocabulary.ts`:
 
 | Category | File | IDs | A1 | A2 | B1 | Total |
 |---|---|---|---|---|---|---|
-| noun | nouns.ts | n001–n200 | 80 | 70 | 50 | 200 |
-| verb | verbs.ts | v001–v100 | 50 | 50 | — | 100 |
-| adjective | adjectives.ts | a001–a150 | 75 | 75 | — | 150 |
-| adverb | adverbs.ts | d001–d100 | 50 | 50 | — | 100 |
-| expression | expressions.ts | e001–e050 | 50 | — | — | 50 |
-| pronoun | pronouns.ts | p001–p030 | 30 | — | — | 30 |
+| noun | es/nouns.ts | es-n001–es-n200 | 80 | 70 | 50 | 200 |
+| verb | es/verbs.ts | es-v001–es-v100 | 50 | 50 | — | 100 |
+| adjective | es/adjectives.ts | es-a001–es-a150 | 75 | 75 | — | 150 |
+| adverb | es/adverbs.ts | es-d001–es-d100 | 50 | 50 | — | 100 |
+| expression | es/expressions.ts | es-e001–es-e050 | 50 | — | — | 50 |
+| pronoun | es/pronouns.ts | es-p001–es-p030 | 30 | — | — | 30 |
 | **Total** | | | **335** | **245** | **50** | **630** |
 
 To add words: add them to the category file, continue the ID sequence
-(e.g. the next noun is `n201`) and **update this table**.
+(e.g. the next noun is `es-n201`) and **update this table**.
 Never renumber an existing ID: the progress and quiz results stored on the backend refer to it.
+The language prefix keeps ids unique across languages; the backend migrated the old
+unprefixed Spanish ids (`n001` → `es-n001`) when it introduced the prefix.
 
 ---
 
@@ -459,7 +462,7 @@ Never renumber an existing ID: the progress and quiz results stored on the backe
 | Level filter | app/index.tsx + quizEngine.ts | Pass the chosen level to buildQuizSession() |
 | Native Google Sign-In | lib/auth.ts | expo-auth-session (PKCE) + dev build |
 | Offline quizzes | hooks/useQuizSession.ts | Queue finished sessions that could not be sent; safe to retry, the session id is an idempotency key |
-| More languages | types/index.ts + data/ | Add a language field to VocabWord |
+| More languages | see PLAN.md (Indonesian, planned) | One folder per language under data/, language given by the folder and the id prefix, no language field on VocabWord |
 
 ---
 

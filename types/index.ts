@@ -1,5 +1,8 @@
 // ─── Core vocabulary types ───────────────────────────────────────────────────
 
+// Language being learnt. Also the folder of its words (data/es/) and their id prefix ('es-n001').
+export type Language = 'es';
+
 export type GrammarCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'expression' | 'pronoun';
 
 export type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
@@ -7,7 +10,7 @@ export type WordLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 export interface VocabWord {
   id: string;
   french: string;
-  spanish: string;
+  target: string;    // Word in the language being learnt (language given by the id prefix)
   category: GrammarCategory;
   level: WordLevel;
   // Future: audio, example sentences, tags

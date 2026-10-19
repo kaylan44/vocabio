@@ -112,7 +112,7 @@ function StatsBody({ stats }: { stats: QuizStats }) {
           {missedWords.map(({ word, wrong }) => (
             <Row
               key={word.id}
-              label={`${word.french} · ${word.spanish}`}
+              label={`${word.french} · ${word.target}`}
               value={`${wrong} ${wrong > 1 ? 'erreurs' : 'erreur'}`}
             />
           ))}

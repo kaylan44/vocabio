@@ -26,9 +26,9 @@ const STATS: QuizStats = {
   byCategory: [{ category: 'pronoun', answers: 40, correct: 33, accuracy: 0.825 }],
   byLevel: [{ level: 'A1', answers: 80, correct: 70, accuracy: 0.875 }],
   mostMissedWords: [
-    { wordId: 'v042', wrong: 4 },
+    { wordId: 'es-v042', wrong: 4 },
     { wordId: 'zzz999', wrong: 3 },
-    { wordId: 'n001', wrong: 1 },
+    { wordId: 'es-n001', wrong: 1 },
   ],
 };
 
@@ -68,11 +68,11 @@ describe('StatsCard', () => {
 
   it('resolves missed words from the vocabulary and skips unknown ids', async () => {
     await render(<StatsCard stats={STATS} status="ready" onRetry={jest.fn()} />);
-    const verb = getWordById('v042')!;
-    const noun = getWordById('n001')!;
-    expect(screen.getByText(`${verb.french} · ${verb.spanish}`)).toBeTruthy();
+    const verb = getWordById('es-v042')!;
+    const noun = getWordById('es-n001')!;
+    expect(screen.getByText(`${verb.french} · ${verb.target}`)).toBeTruthy();
     expect(screen.getByText('4 erreurs')).toBeTruthy();
-    expect(screen.getByText(`${noun.french} · ${noun.spanish}`)).toBeTruthy();
+    expect(screen.getByText(`${noun.french} · ${noun.target}`)).toBeTruthy();
     expect(screen.getByText('1 erreur')).toBeTruthy();
     expect(screen.queryByText('3 erreurs')).toBeNull();
   });

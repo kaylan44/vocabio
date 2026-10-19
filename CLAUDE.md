@@ -26,7 +26,7 @@ A task is not done if `tsc` reports errors.
 - `constants/theme.ts` only holds visual tokens. Behaviour constants (questions per session, delays, pagination…) go in `constants/config.ts`.
 - Never use `Animated` from `react-native` core. This project uses `react-native-reanimated` exclusively.
 - Every new reusable component goes in `components/ui/`. Every quiz-specific component goes in `components/quiz/`.
-- New words go in their category file (`data/nouns.ts`, `data/verbs.ts`…), follow the existing ID format (`n###`, `v###`, `a###`, `d###`, `e###`, `p###`) and continue the sequence with no gaps.
+- New words go in their language folder and category file (`data/es/nouns.ts`, `data/es/verbs.ts`…), follow the existing ID format (language prefix + category letter + 3 digits: `es-n###`, `es-v###`, `es-a###`, `es-d###`, `es-e###`, `es-p###`) and continue the sequence with no gaps.
 - Do not introduce another state management library. Zustand is the only one used in this project.
 - Do not introduce another animation library. Reanimated is the only one used.
 
